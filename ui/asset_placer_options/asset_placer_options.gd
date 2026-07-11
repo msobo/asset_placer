@@ -2,9 +2,11 @@
 extends Control
 
 var presenter: AssetPlacerPresenter
+var _settings_presenter := SettingsPresenter.new()
 @onready var grid_snapping_checkbox = %GridSnappingCheckbox
 @onready var grid_snap_u_spin_box: SpinBox = %GridSnapUSpinBox
 @onready var grid_snap_v_spin_box: SpinBox = %GridSnapVSpinBox
+@onready var plane_grid_step_spin_box: SpinBox = %PlaneGridStepSpinBox
 @onready var min_rotation_selector: SpinBoxVector3 = %MinRotationSelector
 @onready var max_rotation_selector: SpinBoxVector3 = %MaxRotationSelector
 
@@ -46,6 +48,8 @@ func _ready():
 	grid_snapping_checkbox.toggled.connect(presenter.set_grid_snapping_enabled)
 	grid_snap_u_spin_box.value_changed.connect(presenter.set_grid_snap_u)
 	grid_snap_v_spin_box.value_changed.connect(presenter.set_grid_snap_v)
+	plane_grid_step_spin_box.value_changed.connect(_settings_presenter.set_plane_placement_step)
+	_settings_presenter.show_settings.connect(_show_settings)
 	random_asset_check_box.toggled.connect(presenter.set_random_asset_enabled)
 	max_rotation_selector.value_changed.connect(presenter.set_max_rotation)
 	min_rotation_selector.value_changed.connect(presenter.set_min_rotation)
@@ -75,7 +79,12 @@ func _ready():
 	random_rotation_check_box.toggled.connect(presenter.set_random_rotation_enabled)
 	random_scale_check_box.toggled.connect(presenter.set_random_scale_enabled)
 	align_normals_checkbox.toggled.connect(presenter.set_align_normals)
+	_settings_presenter.ready()
 	presenter.ready()
+
+
+func _show_settings(settings: AssetPlacerSettings):
+	plane_grid_step_spin_box.set_value_no_signal(settings.plane_placement_step)
 
 
 func _show_terrain_3d_selector():

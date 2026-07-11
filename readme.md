@@ -23,6 +23,9 @@ This is Godot Editor plugin that allows for quick asset placement and management
 - **Custom thumbnail rendering** - Generated previews with cache storage and a regeneration option in Settings
 - Filter Assets by their name and collection
 - Grid snapping when placing assets
+- **Grid Brush** - Paint assets freehand, as straight grid lines, or across filled rectangular areas in Plane Placement Mode
+- **One Asset per Grid Cell** - Brush strokes and regular plane placements replace existing Asset Placer objects in occupied cells without affecting unrelated nodes or assets on other height levels
+- **Configurable Grid Step** - Set a square grid size from 0.01 to 1000 world units; the visible plane grid updates automatically
 - Randomize asset Rotation and Scale on placement
 - Undo-Redo Integration
 
@@ -100,6 +103,22 @@ You can quickly enter this mode by pressing `Q` while in placement mode.
 
 If you want to configure Plane Options (Normal and Origin) you can do so within Options Sub View or with `W` Translate Mode
 This will allow to move the plane origin using Mouse Wheel along selected Axis
+
+Plane height steps are anchored to the world origin. Horizontal planes therefore always reach `y = 0`, regardless of the configured step size. If changing the step size leaves the plane between valid levels, it snaps to the next level in the current movement direction. This also works along the X and Z axes and with angled plane normals.
+
+#### Grid Brush
+
+The Grid Brush makes it quick to build levels from modular props in Plane Placement Mode. Press `B` to toggle the brush; enabling it automatically activates Plane Placement Mode and grid snapping. The shortcut is configurable in Settings.
+
+- `Left Mouse Button` drag: Paint freehand across grid cells
+- `Shift` + `Left Mouse Button` drag: Paint a straight, continuous grid line
+- `Ctrl` + `Left Mouse Button` drag: Paint a filled rectangular area
+
+Each grid cell contains at most one object placed by Asset Placer. Painting into an occupied cell replaces that object. The same replacement behavior applies to regular single placements in Plane Placement Mode. Unrelated nodes and Asset Placer objects on other height levels remain untouched.
+
+An entire drag is recorded as a single Undo/Redo action. The preview's rotation and scale at the start of the drag are applied consistently to the complete stroke. A brush preview and viewport overlay hints show the active brush behavior.
+
+Set the square **Grid Step** in Asset Placement Options to any value from `0.01` to `1000` world units. The visible plane grid scales with this value. If the setting changes during a brush stroke, the current stroke keeps the grid size with which it started.
 
 #### Terrain 3d Placement
 
@@ -223,6 +242,7 @@ When multiple assets are selected, the star button is always visible for easy ba
 - **Regenerate Thumbnails** - Rebuild generated asset previews from Settings when needed
 - **Asset Palette Item Scale** - Adjust the size of palette buttons in both the Palette tab and viewport overlay (default: 1.0)
 - **Plane Mode Toggle** - Configure plane placement mode behavior
+- **Grid Step** - Set the square Plane Placement grid size from 0.01 to 1000 world units
 - **Asset Library Path** - Set a custom location for the `asset_library.json` file, useful for version control and team sharing
 
 #### Key Bindings
@@ -234,6 +254,7 @@ Customize shortcuts for all Asset Placer actions:
 - Translate (Default: `W`)
 - Cycle Placement Modes (Default: `Q`)
 - Toggle Snapping (Default: `S`)
+- Toggle Grid Brush (Default: `B`)
 - Toggle X, Y, Z Axis (Default: `X`, `Y`, `Z`)
 - Transform Apply (Default: Mouse Wheel Up/Down)
 - In Place Transform Mode (Default: `Shift+E`)

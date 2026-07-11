@@ -31,18 +31,18 @@ script = ExtResource("2_o45xf")
 icon_name = &"Info"
 metadata/_custom_type_script = "uid://dmicn3kmr620j"
 
-[sub_resource type="Texture2D" id="Texture2D_br0rc"]
-resource_local_to_scene = false
-resource_name = ""
-script = ExtResource("2_o45xf")
-icon_name = &"RandomNumberGenerator"
-metadata/_custom_type_script = "uid://dmicn3kmr620j"
-
 [sub_resource type="Texture2D" id="Texture2D_5lmt4"]
 resource_local_to_scene = false
 resource_name = ""
 script = ExtResource("2_o45xf")
 icon_name = &"Snap"
+metadata/_custom_type_script = "uid://dmicn3kmr620j"
+
+[sub_resource type="Texture2D" id="Texture2D_br0rc"]
+resource_local_to_scene = false
+resource_name = ""
+script = ExtResource("2_o45xf")
+icon_name = &"RandomNumberGenerator"
 metadata/_custom_type_script = "uid://dmicn3kmr620j"
 
 [sub_resource type="Texture2D" id="Texture2D_5hqbk"]
@@ -197,23 +197,6 @@ max = Vector3(1, 1, 1)
 normalized = true
 metadata/_custom_type_script = "uid://btqju8qjrlawq"
 
-[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer" unique_id=1976438150]
-layout_mode = 2
-
-[node name="RandomAssetCheckBox" type="CheckBox" parent="VBoxContainer/VBoxContainer" unique_id=876857783]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Enable Random Asset Placement"
-icon = SubResource("Texture2D_br0rc")
-
-[node name="Label" type="Label" parent="VBoxContainer/VBoxContainer" unique_id=260316837]
-custom_minimum_size = Vector2(315, 0)
-layout_mode = 2
-size_flags_horizontal = 0
-theme_override_font_sizes/font_size = 14
-text = "Experimental: This option will pick item from the currently visible assets  after each placement"
-autowrap_mode = 2
-
 [node name="Snapping" type="BoxContainer" parent="VBoxContainer" unique_id=22742712]
 layout_mode = 2
 
@@ -223,6 +206,7 @@ layout_mode = 2
 [node name="GridSnappingCheckbox" type="CheckBox" parent="VBoxContainer/Snapping/VBoxContainer" unique_id=42123293]
 unique_name_in_owner = true
 layout_mode = 2
+button_pressed = true
 text = "Grid Snapping"
 icon = SubResource("Texture2D_5lmt4")
 
@@ -240,7 +224,23 @@ min_value = 0.01
 max_value = 1000.0
 step = 0.01
 value = 1.0
-editable = false
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer" unique_id=1976438150]
+layout_mode = 2
+
+[node name="RandomAssetCheckBox" type="CheckBox" parent="VBoxContainer/VBoxContainer" unique_id=876857783]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Enable Random Asset Placement"
+icon = SubResource("Texture2D_br0rc")
+
+[node name="Label" type="Label" parent="VBoxContainer/VBoxContainer" unique_id=260316837]
+custom_minimum_size = Vector2(315, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_font_sizes/font_size = 14
+text = "Experimental: This option will pick item from the currently visible assets  after each placement"
+autowrap_mode = 2
 
 [node name="AlignNormalsCheckbox" type="CheckBox" parent="VBoxContainer" unique_id=100200436]
 unique_name_in_owner = true

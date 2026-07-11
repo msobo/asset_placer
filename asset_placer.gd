@@ -208,7 +208,9 @@ func commit_brush_stroke() -> bool:
 		cancel_brush_stroke()
 		return false
 
-	var occupants := _index_brush_occupants(placement_root)
+	var occupants := _index_grid_occupants(
+		placement_root, _brush_plane_options, _brush_grid_step
+	)
 	var old_records: Array = []
 	var seen_old: Dictionary = {}
 	var new_nodes: Array[Node3D] = []
@@ -314,13 +316,15 @@ func _update_brush_preview():
 	_brush_preview.show()
 
 
-func _index_brush_occupants(root: Node3D) -> Dictionary:
+func _index_grid_occupants(
+	root: Node3D, plane_options: PlaneOptions, grid_step: float
+) -> Dictionary:
 	var result: Dictionary = {}
 	for node in _collect_asset_nodes(root):
-		var anchor = _resolve_node_anchor(node)
+		var anchor = _resolve_node_anchor(node, plane_options, grid_step)
 		if anchor == null:
 			continue
-		var cell := PlaneGrid.world_to_cell(anchor, _brush_plane_options.normal, _brush_grid_step)
+		var cell := PlaneGrid.world_to_cell(anchor, plane_options.normal, grid_step)
 		if not result.has(cell):
 			result[cell] = []
 		result[cell].append(node)
@@ -339,10 +343,12 @@ func _collect_asset_nodes(root: Node) -> Array[Node3D]:
 	return result
 
 
-func _resolve_node_anchor(node: Node3D) -> Variant:
-	var normal := _brush_plane_options.normal.normalized()
-	var plane_height := normal.dot(_brush_plane_options.origin)
-	var tolerance := maxf(_brush_grid_step * 0.05, 0.001)
+func _resolve_node_anchor(
+	node: Node3D, plane_options: PlaneOptions, grid_step: float
+) -> Variant:
+	var normal := plane_options.normal.normalized()
+	var plane_height := normal.dot(plane_options.origin)
+	var tolerance := maxf(grid_step * 0.05, 0.001)
 	if node.has_meta(META_BRUSH_ANCHOR) and node.has_meta(META_BRUSH_NORMAL):
 		var stored_normal: Vector3 = node.get_meta(META_BRUSH_NORMAL)
 		if absf(stored_normal.normalized().dot(normal)) < 0.999:
@@ -377,10 +383,7 @@ func _pick_brush_name(base: String, parent: Node, reserved: Dictionary) -> Strin
 
 
 func _do_brush_delta(new_nodes: Array, parent: Node3D, old_records: Array):
-	for record in old_records:
-		var old_node: Node3D = record.node
-		if is_instance_valid(old_node) and old_node.get_parent() != null:
-			old_node.get_parent().remove_child(old_node)
+	_detach_recorded_nodes(old_records)
 	for new_node: Node3D in new_nodes:
 		if new_node.get_parent() == null:
 			parent.add_child(new_node)
@@ -391,7 +394,18 @@ func _undo_brush_delta(new_nodes: Array, old_records: Array):
 	for new_node: Node3D in new_nodes:
 		if is_instance_valid(new_node) and new_node.get_parent() != null:
 			new_node.get_parent().remove_child(new_node)
-	for record in old_records:
+	_restore_recorded_nodes(old_records)
+
+
+func _detach_recorded_nodes(records: Array):
+	for record in records:
+		var old_node: Node3D = record.node
+		if is_instance_valid(old_node) and old_node.get_parent() != null:
+			old_node.get_parent().remove_child(old_node)
+
+
+func _restore_recorded_nodes(records: Array):
+	for record in records:
 		var old_node: Node3D = record.node
 		var old_parent: Node = record.parent
 		if (
@@ -480,18 +494,44 @@ func _place_instance(transform: Transform3D, select_after_placement: bool):
 		new_node.transform = parent.global_transform.affine_inverse() * transform
 		new_node.name = _pick_name(new_node, parent)
 		new_node.set_meta(META_ASSET_ID, asset.id)
+		var old_records: Array = []
+		if options.snapping_enabled and _strategy is PlanePlacementStrategy:
+			var plane_options: PlaneOptions = _strategy.plane_options
+			var grid_step := options.snapping_grid_step
+			var cell := PlaneGrid.world_to_cell(
+				_last_placement_anchor, plane_options.normal, grid_step
+			)
+			var occupants := _index_grid_occupants(scene_root, plane_options, grid_step)
+			for old_node: Node3D in occupants.get(cell, []):
+				old_records.append(
+					{
+						"node": old_node,
+						"parent": old_node.get_parent(),
+						"index": old_node.get_index(),
+						"owner": old_node.owner,
+					}
+				)
+			new_node.set_meta(META_BRUSH_ANCHOR, _last_placement_anchor)
+			new_node.set_meta(META_BRUSH_NORMAL, plane_options.normal.normalized())
 
 		undo_redo.create_action("Place Asset: %s" % asset.name, 0, parent)
 		undo_redo.add_do_reference(new_node)
-		undo_redo.add_do_method(self, "_do_placement", new_node, parent, select_after_placement)
-		undo_redo.add_undo_method(self, "_undo_placement", new_node, parent)
+		for record in old_records:
+			undo_redo.add_undo_reference(record.node)
+		undo_redo.add_do_method(
+			self, "_do_placement", new_node, parent, select_after_placement, old_records
+		)
+		undo_redo.add_undo_method(self, "_undo_placement", new_node, old_records)
 		undo_redo.commit_action()
 
 		AssetTransformations.apply_transforms(preview_node, _presenter.options)
 		_presenter.on_asset_placed()
 
 
-func _do_placement(new_node: Node3D, root: Node3D, select_after_placement: bool):
+func _do_placement(
+	new_node: Node3D, root: Node3D, select_after_placement: bool, old_records: Array
+):
+	_detach_recorded_nodes(old_records)
 	var temp_name := new_node.name
 	root.add_child(new_node)
 	new_node.name = temp_name
@@ -501,8 +541,10 @@ func _do_placement(new_node: Node3D, root: Node3D, select_after_placement: bool)
 		EditorInterface.edit_node(new_node)
 
 
-func _undo_placement(new_node: Node3D, root: Node3D):
-	root.remove_child(new_node)
+func _undo_placement(new_node: Node3D, old_records: Array):
+	if is_instance_valid(new_node) and new_node.get_parent() != null:
+		new_node.get_parent().remove_child(new_node)
+	_restore_recorded_nodes(old_records)
 
 
 func _confirm_node_transform():

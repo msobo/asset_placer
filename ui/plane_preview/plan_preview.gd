@@ -15,7 +15,8 @@ func _ready():
 		func(settings): _set_plane_material(settings, presenter.options.snapping_grid_step)
 	)
 	presenter.options_changed.connect(
-		func(options): _set_plane_material(settings_repository.get_settings(), options.snapping_grid_step)
+		func(options):
+			_set_plane_material(settings_repository.get_settings(), options.snapping_grid_step)
 	)
 
 	_react_placement_mode_change(mode)
@@ -29,7 +30,7 @@ func _ready():
 	)
 
 
-func _set_plane_material(settings: AssetPlacerSettings, grid_step: float):
+func _set_plane_material(settings: AssetPlacerSettings, grid_step: Vector2):
 	var source_material: Material = load(settings.plane_material_resource)
 	if source_material == null:
 		mesh_instance.set_surface_override_material(0, null)
@@ -41,10 +42,17 @@ func _set_plane_material(settings: AssetPlacerSettings, grid_step: float):
 			var plane_size := 200.0
 			if mesh_instance.mesh is PlaneMesh:
 				plane_size = (mesh_instance.mesh as PlaneMesh).size.x
-			var repeats := plane_size / (grid_step * GRID_CELLS_PER_TEXTURE)
-			material.uv1_scale = Vector3(repeats, repeats, repeats)
+			var repeats := Vector2(
+				plane_size / (grid_step.x * GRID_CELLS_PER_TEXTURE),
+				plane_size / (grid_step.y * GRID_CELLS_PER_TEXTURE)
+			)
+			material.uv1_scale = Vector3(repeats.x, repeats.y, 1.0)
 		else:
-			material.uv1_scale /= grid_step
+			material.uv1_scale = Vector3(
+				material.uv1_scale.x / grid_step.x,
+				material.uv1_scale.y / grid_step.y,
+				material.uv1_scale.z
+			)
 	mesh_instance.set_surface_override_material(0, material)
 
 
@@ -57,13 +65,10 @@ func _react_placement_mode_change(placement_mode: GapPlacementMode):
 
 
 func _update_mes_per_plane_configuration(plane_options: PlaneOptions):
-	var normal = plane_options.normal.normalized()
-	var forward = (
-		normal.cross(Vector3.UP).normalized()
-		if (abs(normal.dot(Vector3.UP)) < 0.99)
-		else normal.cross(Vector3.FORWARD).normalized()
-	)
-	var right = forward.cross(normal).normalized()
-	var basis = Basis(right, normal, forward)
+	var normal := plane_options.normal.normalized()
+	var axes := PlaneGrid.get_axes(normal)
+	var tangent: Vector3 = axes[0]
+	var bitangent: Vector3 = axes[1]
+	var basis := Basis(tangent, normal, -bitangent)
 	mesh_instance.transform.basis = basis.orthonormalized()
 	mesh_instance.global_transform = Transform3D(basis.orthonormalized(), plane_options.origin)

@@ -1,12 +1,12 @@
 class_name AssetPlacerOptions
 extends RefCounted
 
-const DEFAULT_GRID_STEP := 1.0
+const DEFAULT_GRID_STEP := Vector2.ONE
 const MIN_GRID_STEP := 0.01
 const MAX_GRID_STEP := 1000.0
 
 var snapping_enabled: bool = false
-var snapping_grid_step: float = DEFAULT_GRID_STEP
+var snapping_grid_step: Vector2 = DEFAULT_GRID_STEP
 
 var use_asset_origin: bool = true
 var align_normals: bool = false

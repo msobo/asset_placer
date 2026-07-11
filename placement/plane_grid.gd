@@ -11,29 +11,31 @@ static func get_axes(normal: Vector3) -> Array[Vector3]:
 	return [tangent, bitangent]
 
 
-static func snap_position(position: Vector3, normal: Vector3, grid_step: float) -> Vector3:
+static func snap_position(position: Vector3, normal: Vector3, grid_step: Vector2) -> Vector3:
 	var n := normal.normalized()
 	var axes := get_axes(n)
 	var tangent: Vector3 = axes[0]
 	var bitangent: Vector3 = axes[1]
 	var cell := world_to_cell(position, n, grid_step)
-	return tangent * cell.x * grid_step + bitangent * cell.y * grid_step + n * n.dot(position)
+	return tangent * cell.x * grid_step.x + bitangent * cell.y * grid_step.y + n * n.dot(position)
 
 
-static func world_to_cell(position: Vector3, normal: Vector3, grid_step: float) -> Vector2i:
+static func world_to_cell(position: Vector3, normal: Vector3, grid_step: Vector2) -> Vector2i:
 	var axes := get_axes(normal)
 	return Vector2i(
-		roundi((axes[0] as Vector3).dot(position) / grid_step),
-		roundi((axes[1] as Vector3).dot(position) / grid_step)
+		roundi((axes[0] as Vector3).dot(position) / grid_step.x),
+		roundi((axes[1] as Vector3).dot(position) / grid_step.y)
 	)
 
 
-static func cell_to_world(cell: Vector2i, plane_options: PlaneOptions, grid_step: float) -> Vector3:
+static func cell_to_world(
+	cell: Vector2i, plane_options: PlaneOptions, grid_step: Vector2
+) -> Vector3:
 	var n := plane_options.normal.normalized()
 	var axes := get_axes(n)
 	return (
-		(axes[0] as Vector3) * cell.x * grid_step
-		+ (axes[1] as Vector3) * cell.y * grid_step
+		(axes[0] as Vector3) * cell.x * grid_step.x
+		+ (axes[1] as Vector3) * cell.y * grid_step.y
 		+ n * n.dot(plane_options.origin)
 	)
 

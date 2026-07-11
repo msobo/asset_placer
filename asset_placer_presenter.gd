@@ -216,13 +216,23 @@ func set_unform_scaling(value: bool):
 	options_changed.emit(options)
 
 
-func set_grid_snap_value(value: float):
+func set_grid_snap_u(value: float):
 	var normalized := clampf(
 		value, AssetPlacerOptions.MIN_GRID_STEP, AssetPlacerOptions.MAX_GRID_STEP
 	)
-	if is_equal_approx(options.snapping_grid_step, normalized):
+	if is_equal_approx(options.snapping_grid_step.x, normalized):
 		return
-	options.snapping_grid_step = normalized
+	options.snapping_grid_step.x = normalized
+	options_changed.emit(options)
+
+
+func set_grid_snap_v(value: float):
+	var normalized := clampf(
+		value, AssetPlacerOptions.MIN_GRID_STEP, AssetPlacerOptions.MAX_GRID_STEP
+	)
+	if is_equal_approx(options.snapping_grid_step.y, normalized):
+		return
+	options.snapping_grid_step.y = normalized
 	options_changed.emit(options)
 
 

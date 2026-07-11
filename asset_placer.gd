@@ -4,6 +4,7 @@ extends RefCounted
 const META_ASSET_ID = &"asset_placer_res_id"
 const META_BRUSH_ANCHOR = &"asset_placer_brush_anchor"
 const META_BRUSH_NORMAL = &"asset_placer_brush_normal"
+const ANCHOR_EPSILON := 0.001
 
 enum BrushStrokeMode { Freehand, Line, RectangleFill }
 
@@ -26,7 +27,7 @@ var _brush_start_cell := Vector2i.ZERO
 var _brush_last_cell := Vector2i.ZERO
 var _brush_cells: Dictionary = {}
 var _brush_plane_options: PlaneOptions
-var _brush_grid_step := 1.0
+var _brush_grid_step := Vector2.ONE
 var _brush_start_anchor := Vector3.ZERO
 var _brush_transform := Transform3D.IDENTITY
 var _brush_asset: AssetResource
@@ -208,15 +209,15 @@ func commit_brush_stroke() -> bool:
 		cancel_brush_stroke()
 		return false
 
-	var occupants := _index_grid_occupants(
-		placement_root, _brush_plane_options, _brush_grid_step
-	)
+	var occupants := _index_anchor_occupants(placement_root, _brush_plane_options)
 	var old_records: Array = []
 	var seen_old: Dictionary = {}
 	var new_nodes: Array[Node3D] = []
 	var reserved_names: Dictionary = {}
 	for cell: Vector2i in _brush_cells.keys():
-		for old_node: Node3D in occupants.get(cell, []):
+		var anchor := PlaneGrid.cell_to_world(cell, _brush_plane_options, _brush_grid_step)
+		var anchor_key := _anchor_key(anchor, _brush_plane_options.normal)
+		for old_node: Node3D in occupants.get(anchor_key, []):
 			if seen_old.has(old_node):
 				continue
 			seen_old[old_node] = true
@@ -235,7 +236,6 @@ func commit_brush_stroke() -> bool:
 		var new_node := _instantiate_asset_resource(_brush_asset)
 		if new_node == null:
 			continue
-		var anchor := PlaneGrid.cell_to_world(cell, _brush_plane_options, _brush_grid_step)
 		var transform := _brush_transform
 		transform.origin += anchor - _brush_start_anchor
 		new_node.global_transform = transform
@@ -299,12 +299,12 @@ func _update_brush_preview():
 	var half := _brush_grid_step * 0.46
 	for cell: Vector2i in _brush_cells.keys():
 		var center := PlaneGrid.cell_to_world(cell, _brush_plane_options, _brush_grid_step)
-		center += normal * maxf(_brush_grid_step * 0.01, 0.005)
+		center += normal * maxf(minf(_brush_grid_step.x, _brush_grid_step.y) * 0.01, 0.005)
 		var base := vertices.size()
-		vertices.append(center - tangent * half - bitangent * half)
-		vertices.append(center + tangent * half - bitangent * half)
-		vertices.append(center + tangent * half + bitangent * half)
-		vertices.append(center - tangent * half + bitangent * half)
+		vertices.append(center - tangent * half.x - bitangent * half.y)
+		vertices.append(center + tangent * half.x - bitangent * half.y)
+		vertices.append(center + tangent * half.x + bitangent * half.y)
+		vertices.append(center - tangent * half.x + bitangent * half.y)
 		indices.append_array(PackedInt32Array([base, base + 1, base + 2, base, base + 2, base + 3]))
 	var arrays := []
 	arrays.resize(Mesh.ARRAY_MAX)
@@ -316,19 +316,25 @@ func _update_brush_preview():
 	_brush_preview.show()
 
 
-func _index_grid_occupants(
-	root: Node3D, plane_options: PlaneOptions, grid_step: float
-) -> Dictionary:
+func _index_anchor_occupants(root: Node3D, plane_options: PlaneOptions) -> Dictionary:
 	var result: Dictionary = {}
 	for node in _collect_asset_nodes(root):
-		var anchor = _resolve_node_anchor(node, plane_options, grid_step)
+		var anchor = _resolve_node_anchor(node, plane_options)
 		if anchor == null:
 			continue
-		var cell := PlaneGrid.world_to_cell(anchor, plane_options.normal, grid_step)
-		if not result.has(cell):
-			result[cell] = []
-		result[cell].append(node)
+		var key := _anchor_key(anchor, plane_options.normal)
+		if not result.has(key):
+			result[key] = []
+		result[key].append(node)
 	return result
+
+
+func _anchor_key(anchor: Vector3, normal: Vector3) -> Vector2i:
+	var axes := PlaneGrid.get_axes(normal)
+	return Vector2i(
+		roundi((axes[0] as Vector3).dot(anchor) / ANCHOR_EPSILON),
+		roundi((axes[1] as Vector3).dot(anchor) / ANCHOR_EPSILON)
+	)
 
 
 func _collect_asset_nodes(root: Node) -> Array[Node3D]:
@@ -343,19 +349,18 @@ func _collect_asset_nodes(root: Node) -> Array[Node3D]:
 	return result
 
 
-func _resolve_node_anchor(
-	node: Node3D, plane_options: PlaneOptions, grid_step: float
-) -> Variant:
+func _resolve_node_anchor(node: Node3D, plane_options: PlaneOptions) -> Variant:
 	var normal := plane_options.normal.normalized()
 	var plane_height := normal.dot(plane_options.origin)
-	var tolerance := maxf(grid_step * 0.05, 0.001)
 	if node.has_meta(META_BRUSH_ANCHOR) and node.has_meta(META_BRUSH_NORMAL):
 		var stored_normal: Vector3 = node.get_meta(META_BRUSH_NORMAL)
 		if absf(stored_normal.normalized().dot(normal)) < 0.999:
 			return null
 		var stored_anchor: Vector3 = node.get_meta(META_BRUSH_ANCHOR)
 		return (
-			stored_anchor if absf(normal.dot(stored_anchor) - plane_height) <= tolerance else null
+			stored_anchor
+			if absf(normal.dot(stored_anchor) - plane_height) <= ANCHOR_EPSILON
+			else null
 		)
 
 	var candidates: Array[Vector3] = [node.global_position]
@@ -369,7 +374,7 @@ func _resolve_node_anchor(
 		if distance < best_distance:
 			best = candidate
 			best_distance = distance
-	return best if best_distance <= tolerance else null
+	return best if best_distance <= ANCHOR_EPSILON else null
 
 
 func _pick_brush_name(base: String, parent: Node, reserved: Dictionary) -> String:
@@ -474,7 +479,7 @@ func _snap_position(hit_pos: Vector3, normal: Vector3) -> Vector3:
 	if !_presenter.options.snapping_enabled:
 		return hit_pos
 
-	var grid_step: float = (
+	var grid_step: Vector2 = (
 		_brush_grid_step if _brush_active else _presenter.options.snapping_grid_step
 	)
 	return PlaneGrid.snap_position(hit_pos, normal, grid_step)
@@ -497,19 +502,19 @@ func _place_instance(transform: Transform3D, select_after_placement: bool):
 		var old_records: Array = []
 		if options.snapping_enabled and _strategy is PlanePlacementStrategy:
 			var plane_options: PlaneOptions = _strategy.plane_options
-			var grid_step := options.snapping_grid_step
-			var cell := PlaneGrid.world_to_cell(
-				_last_placement_anchor, plane_options.normal, grid_step
-			)
-			var occupants := _index_grid_occupants(scene_root, plane_options, grid_step)
-			for old_node: Node3D in occupants.get(cell, []):
-				old_records.append(
-					{
-						"node": old_node,
-						"parent": old_node.get_parent(),
-						"index": old_node.get_index(),
-						"owner": old_node.owner,
-					}
+			var anchor_key := _anchor_key(_last_placement_anchor, plane_options.normal)
+			var occupants := _index_anchor_occupants(scene_root, plane_options)
+			for old_node: Node3D in occupants.get(anchor_key, []):
+				(
+					old_records
+					. append(
+						{
+							"node": old_node,
+							"parent": old_node.get_parent(),
+							"index": old_node.get_index(),
+							"owner": old_node.owner,
+						}
+					)
 				)
 			new_node.set_meta(META_BRUSH_ANCHOR, _last_placement_anchor)
 			new_node.set_meta(META_BRUSH_NORMAL, plane_options.normal.normalized())

@@ -210,14 +210,31 @@ button_pressed = true
 text = "Grid Snapping"
 icon = SubResource("Texture2D_5lmt4")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer/Snapping/VBoxContainer" unique_id=251282854]
+[node name="GridStepUContainer" type="HBoxContainer" parent="VBoxContainer/Snapping/VBoxContainer" unique_id=251282854]
 layout_mode = 2
+tooltip_text = "Step size along the plane's local U axis."
 
-[node name="Label" type="Label" parent="VBoxContainer/Snapping/VBoxContainer/HBoxContainer" unique_id=1964560100]
+[node name="Label" type="Label" parent="VBoxContainer/Snapping/VBoxContainer/GridStepUContainer" unique_id=1964560100]
 layout_mode = 2
-text = "Grid Step"
+text = "Grid Step U"
 
-[node name="GridSnapValueSpinBox" type="SpinBox" parent="VBoxContainer/Snapping/VBoxContainer/HBoxContainer" unique_id=2046698301]
+[node name="GridSnapUSpinBox" type="SpinBox" parent="VBoxContainer/Snapping/VBoxContainer/GridStepUContainer" unique_id=2046698301]
+unique_name_in_owner = true
+layout_mode = 2
+min_value = 0.01
+max_value = 1000.0
+step = 0.01
+value = 1.0
+
+[node name="GridStepVContainer" type="HBoxContainer" parent="VBoxContainer/Snapping/VBoxContainer"]
+layout_mode = 2
+tooltip_text = "Step size along the plane's local V axis. Swap U and V when rotating modular assets by 90 degrees."
+
+[node name="Label" type="Label" parent="VBoxContainer/Snapping/VBoxContainer/GridStepVContainer"]
+layout_mode = 2
+text = "Grid Step V"
+
+[node name="GridSnapVSpinBox" type="SpinBox" parent="VBoxContainer/Snapping/VBoxContainer/GridStepVContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 min_value = 0.01

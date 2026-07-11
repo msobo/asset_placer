@@ -35,13 +35,6 @@ script = ExtResource("1_si2q2")
 icon_name = &"Close"
 metadata/_custom_type_script = "uid://dmicn3kmr620j"
 
-[sub_resource type="Texture2D" id="Texture2D_altf5"]
-resource_local_to_scene = false
-resource_name = ""
-script = ExtResource("1_si2q2")
-icon_name = &"Info"
-metadata/_custom_type_script = "uid://dmicn3kmr620j"
-
 [sub_resource type="Texture2D" id="Texture2D_cqn4c"]
 resource_local_to_scene = false
 resource_name = ""
@@ -269,33 +262,6 @@ ticks_position = 3
 [node name="Spacing" type="Control" parent="Panel/MarginContainer/ScrollContainer/VBoxContainer/HBoxContainer/General" unique_id=653626810]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
-
-[node name="UpdateChannelContainer" type="HBoxContainer" parent="Panel/MarginContainer/ScrollContainer/VBoxContainer/HBoxContainer/General" unique_id=1499912835]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="Panel/MarginContainer/ScrollContainer/VBoxContainer/HBoxContainer/General/UpdateChannelContainer" unique_id=1799532065]
-layout_mode = 2
-text = "Plugin Update Channel"
-
-[node name="UpdateChannelInfoButton" type="Button" parent="Panel/MarginContainer/ScrollContainer/VBoxContainer/HBoxContainer/General/UpdateChannelContainer" unique_id=1662314607]
-unique_name_in_owner = true
-layout_mode = 2
-icon = SubResource("Texture2D_altf5")
-flat = true
-
-[node name="UpdateChannelOptionButton" type="OptionButton" parent="Panel/MarginContainer/ScrollContainer/VBoxContainer/HBoxContainer/General/UpdateChannelContainer" unique_id=1908545530]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 10
-alignment = 2
-selected = 2
-item_count = 3
-popup/item_0/text = "Stable"
-popup/item_0/id = 0
-popup/item_1/text = "Beta"
-popup/item_1/id = 1
-popup/item_2/text = "Alpha"
-popup/item_2/id = 2
 
 [node name="KeyBindings" type="VBoxContainer" parent="Panel/MarginContainer/ScrollContainer/VBoxContainer/HBoxContainer" unique_id=1876461377]
 layout_mode = 2

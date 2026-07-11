@@ -19,7 +19,6 @@ var plugin_path: String:
 
 var _presenter: AssetPlacerPresenter
 var _asset_placer: AssetPlacer
-var _updater: PluginUpdater
 var _async: AssetPlacerAsync
 var _thumbnail_cache_store: ThumbnailCacheStore
 var _thumbnail_render_service: ThumbnailRenderService
@@ -55,7 +54,6 @@ func _enter_tree():
 	get_tree().root.add_child(_thumbnail_coordinator)
 	_presenter = AssetPlacerPresenter.new()
 	AssetPlacerDockPresenter.new()
-	_updater = PluginUpdater.new(ADDON_PATH + "/plugin.cfg", "")
 	_plane_preview = (
 		load("res://addons/asset_placer/ui/plane_preview/plan_preview.tscn").instantiate()
 	)
@@ -102,10 +100,6 @@ func _enter_tree():
 	if !_file_system.is_scanning():
 		synchronizer.sync_all()
 
-	_updater.updater_update_available.connect(_show_update_available)
-	_updater.updater_up_to_date.connect(_show_plugin_up_to_date)
-	_updater.update_ready.connect(_show_update_available)
-
 
 func _exit_tree():
 	if ClassDB.class_exists(&"EditorDock"):
@@ -116,13 +110,6 @@ func _exit_tree():
 	else:
 		if is_instance_valid(_asset_placer_window):
 			remove_control_from_bottom_panel(_asset_placer_window)
-	if is_instance_valid(_updater):
-		if _updater.updater_up_to_date.is_connected(_show_plugin_up_to_date):
-			_updater.updater_up_to_date.disconnect(_show_plugin_up_to_date)
-		if _updater.updater_update_available.is_connected(_show_update_available):
-			_updater.updater_update_available.disconnect(_show_update_available)
-		if _updater.update_ready.is_connected(_show_update_available):
-			_updater.update_ready.disconnect(_show_update_available)
 	if is_instance_valid(overlay):
 		overlay.queue_free()
 	if is_instance_valid(_plane_preview):
@@ -417,21 +404,6 @@ func _forward_3d_gui_input(viewport_camera, event):
 func _on_placement_tool_changed(tool: AssetPlacerPresenter.PlacementTool):
 	if tool != AssetPlacerPresenter.PlacementTool.Brush:
 		_asset_placer.cancel_brush_stroke()
-
-
-func _show_plugin_up_to_date():
-	if ClassDB.class_exists(&"EditorDock"):
-		_dock.icon_name = &""
-	else:
-		_asset_placer_button.icon = null
-
-
-func _show_update_available(_update: PluginUpdate):
-	if ClassDB.class_exists(&"EditorDock"):
-		_dock.icon_name = &"MoveUp"
-	else:
-		_asset_placer_button.icon = EditorIconTexture2D.new("MoveUp")
-		_asset_placer_button.icon_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 
 
 func _palette_slot_from_key(event: InputEventKey) -> int:

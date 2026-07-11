@@ -19,8 +19,6 @@ enum Bindings {
 	TogglePluginActive
 }
 
-enum UpdateChannel { Stable, Beta, Alpha }
-
 const DEFAULT_PREVIEW_MATERIAL := "res://addons/asset_placer/utils/preview_material.tres"
 const DEFAULT_PLANE_MATERIAL := "res://addons/asset_placer/ui/plane_preview/plane_preview_material.tres"
 const DEFAULT_ASSET_LIBRARY_PATH := AssetLibraryParser.DEFAULT_SAVE_PATH
@@ -30,7 +28,6 @@ var rotation_step: float
 var bindings: Dictionary
 var ui_scale: float
 var palette_item_scale: float
-var update_channel: UpdateChannel
 var binding_positive_transform: APInputOption:
 	get():
 		return bindings[Bindings.TransformPositive]
@@ -76,6 +73,4 @@ static func default() -> AssetPlacerSettings:
 	settings.rotation_step = 5
 	settings.ui_scale = 1.0
 	settings.palette_item_scale = 1.0
-	settings.update_channel = UpdateChannel.Stable
-
 	return settings

@@ -19,9 +19,6 @@ var _thumbnail_regeneration_dialog: ThumbnailRegenerationDialog
 @onready var palette_item_scale_h_slider: HSlider = %PaletteItemScaleHSlider
 @onready var palette_item_scale_value = %PaletteItemScaleValue
 
-@onready var update_channel_option_button: OptionButton = %UpdateChannelOptionButton
-@onready var update_channel_info_button: Button = %UpdateChannelInfoButton
-
 # Keybinds
 
 @onready var kb_rotate = %KeybindingOptionRotate
@@ -69,12 +66,6 @@ func _ready():
 	trasform_step_spin_box.value_changed.connect(_presenter.set_default_transform_step)
 	rotation_step_spin_box.value_changed.connect(_presenter.set_rotation_step)
 
-	update_channel_option_button.item_selected.connect(_presenter.set_update_channel)
-	update_channel_info_button.pressed.connect(
-		func():
-			OS.shell_open("https://levinzonr.github.io/godot-asset-placer/development-lifecycle/")
-	)
-
 	var bindings := AssetPlacerSettings.Bindings
 	var set_binding := _presenter.set_binding
 
@@ -117,8 +108,6 @@ func _show_settings(setting: AssetPlacerSettings):
 	palette_item_scale_h_slider.set_value_no_signal(setting.palette_item_scale)
 	trasform_step_spin_box.set_value_no_signal(setting.transform_step)
 	rotation_step_spin_box.set_value_no_signal(setting.rotation_step)
-
-	update_channel_option_button.select(setting.update_channel)
 
 	var bindings := AssetPlacerSettings.Bindings
 	kb_rotate.set_keybind(setting.bindings[bindings.Rotate])

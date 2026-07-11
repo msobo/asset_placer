@@ -61,12 +61,6 @@ func set_rotation_step(value: float):
 	_repository.set_settings(settings)
 
 
-func set_update_channel(value: AssetPlacerSettings.UpdateChannel):
-	var settings = _repository.get_settings()
-	settings.update_channel = value
-	_repository.set_settings(settings)
-
-
 func set_preview_material(material: String):
 	if material.is_empty():
 		return

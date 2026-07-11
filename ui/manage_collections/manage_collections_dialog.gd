@@ -104,7 +104,9 @@ func _on_collections_changed(
 			var item := _collection_item_res.instantiate()
 			_active_collections_container.add_child(item)
 			var batch_count := cs.assigned_count if batch_mode else 1
-			item.configure_as_assigned(cs.collection, cs.is_partial(), cs.is_primary, batch_count)
+			item.configure_as_assigned(
+				cs.collection, cs.is_partial(), cs.primary_count, cs.total_selected, batch_count
+			)
 			item.action_pressed.connect(_presenter.remove_from_collection.bind(cs.collection))
 			item.set_primary_pressed.connect(_presenter.set_primary_collection.bind(cs.collection))
 

@@ -11,8 +11,8 @@ enum SelectMode { SINGLE, RANGE, MULTI }
 class CollectionState:
 	var collection: AssetCollection
 	var assigned_count: int = 0
+	var primary_count: int = 0
 	var total_selected: int = 0
-	var is_primary: bool = false
 
 	func is_full() -> bool:
 		return assigned_count == total_selected and total_selected > 0
@@ -22,6 +22,9 @@ class CollectionState:
 
 	func is_available() -> bool:
 		return assigned_count < total_selected or total_selected == 0
+
+	func is_primary_for_all() -> bool:
+		return primary_count == total_selected and total_selected > 0
 
 
 var _asset_library: AssetLibrary:
@@ -114,12 +117,15 @@ func filter_assets(query: String):
 
 
 func set_primary_collection(collection: AssetCollection):
+	var remove_from_all := _selected_indices.size() > 0
+	for idx in _selected_indices:
+		if _assets[idx].primary_collection != collection.id:
+			remove_from_all = false
+			break
+
 	for idx in _selected_indices:
 		var asset := _assets[idx]
-		if asset.primary_collection == collection.id:
-			asset.primary_collection = -1
-		else:
-			asset.primary_collection = collection.id
+		asset.primary_collection = -1 if remove_from_all else collection.id
 		_asset_library.update_asset(asset)
 	_emit_collections()
 
@@ -180,20 +186,21 @@ func _emit_collections():
 	var total := _selected_indices.size()
 
 	var collection_counts: Dictionary = {}
+	var primary_counts: Dictionary = {}
 	for idx in _selected_indices:
-		for tag in _assets[idx].tags:
+		var asset := _assets[idx]
+		for tag in asset.tags:
 			collection_counts[tag] = collection_counts.get(tag, 0) + 1
-
-	var primary_id: int = -1
-	if total == 1:
-		primary_id = _assets[_selected_indices[0]].get_primary_collection()
+		var primary_id := asset.get_primary_collection()
+		if primary_id >= 0:
+			primary_counts[primary_id] = primary_counts.get(primary_id, 0) + 1
 
 	for collection in all_collections:
 		var cs := CollectionState.new()
 		cs.collection = collection
 		cs.assigned_count = collection_counts.get(collection.id, 0)
+		cs.primary_count = primary_counts.get(collection.id, 0)
 		cs.total_selected = total
-		cs.is_primary = collection.id == primary_id
 		collections.push_back(cs)
 
 	collections.sort_custom(

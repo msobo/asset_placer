@@ -8,18 +8,19 @@ static func pick_parent(root: Node3D, asset: AssetResource, auto_group: bool) ->
 		return root
 
 	var lib := AssetLibraryManager.get_asset_library()
-	var collection = lib.get_collection(primary_id)
-	var expected_name = collection.name.capitalize()
-	var existing_chidren = root.find_children(expected_name, "Node3D", true)
-	var group_parent: Node3D
-	if existing_chidren.is_empty():
-		group_parent = Node3D.new()
-		print("Not found with name %s" % expected_name)
-		group_parent.name = expected_name
-		root.add_child(group_parent)
-		group_parent.owner = EditorInterface.get_edited_scene_root()
+	if lib == null:
+		return root
+	var collection := lib.get_collection(primary_id)
+	if collection == null:
+		return root
 
-	else:
-		group_parent = existing_chidren[0]
+	var expected_name: String = collection.name
+	for child in root.get_children():
+		if child is Node3D and child.name == expected_name:
+			return child
 
+	var group_parent := Node3D.new()
+	group_parent.name = expected_name
+	root.add_child(group_parent)
+	group_parent.owner = EditorInterface.get_edited_scene_root()
 	return group_parent

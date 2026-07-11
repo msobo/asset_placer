@@ -29,6 +29,7 @@ func on_ready():
 	show_filter_info.emit(0)
 	_asset_library.assets_changed.connect(_filter_by_collections_and_query)
 	_asset_library.folders_changed.connect(sync)
+	synchronizer.sync_complete.connect(_on_sync_complete)
 	_filter_by_collections_and_query()
 
 
@@ -152,3 +153,9 @@ func _filter_by_collections_and_query():
 
 func sync():
 	synchronizer.sync_all()
+
+
+func _on_sync_complete(_added: int, _removed: int, _scanned: int):
+	var coordinator := ThumbnailGenerationCoordinator.instance
+	if is_instance_valid(coordinator):
+		coordinator.request_regeneration([], true)

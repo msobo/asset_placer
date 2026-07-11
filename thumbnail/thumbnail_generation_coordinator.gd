@@ -15,6 +15,9 @@ static var instance: ThumbnailGenerationCoordinator
 
 var _running := false
 var _cancel_requested := false
+var _pending_full_regeneration := false
+var _pending_stale_only := true
+var _pending_assets: Dictionary = {}
 var _cache: ThumbnailCacheStore
 var _renderer: ThumbnailRenderService
 
@@ -36,6 +39,22 @@ func is_running() -> bool:
 
 func request_cancel():
 	_cancel_requested = true
+	_clear_pending_regeneration()
+
+
+func request_regeneration(assets: Array[AssetResource] = [], stale_only: bool = true) -> bool:
+	if not _running:
+		return start_regeneration(assets, stale_only)
+
+	_pending_stale_only = _pending_stale_only and stale_only
+	if assets.is_empty():
+		_pending_full_regeneration = true
+		_pending_assets.clear()
+	else:
+		for asset in assets:
+			if is_instance_valid(asset):
+				_pending_assets[asset.get_instance_id()] = asset
+	return true
 
 
 func start_regeneration(assets: Array[AssetResource] = [], stale_only: bool = true) -> bool:
@@ -60,7 +79,7 @@ func start_regeneration(assets: Array[AssetResource] = [], stale_only: bool = tr
 func generate_for_asset(asset: AssetResource, stale_only: bool = true) -> bool:
 	if not is_instance_valid(asset):
 		return false
-	return start_regeneration([asset], stale_only)
+	return request_regeneration([asset], stale_only)
 
 
 func generate_for_resource_path(resource_path: String, stale_only: bool = true) -> bool:
@@ -71,7 +90,7 @@ func generate_for_resource_path(resource_path: String, stale_only: bool = true) 
 		return false
 	for asset in library.get_assets():
 		if asset.get_path() == resource_path:
-			return start_regeneration([asset], stale_only)
+			return request_regeneration([asset], stale_only)
 	return false
 
 
@@ -128,6 +147,26 @@ func _run_regeneration(assets: Array[AssetResource], stale_only: bool):
 		canceled.emit(success, failed, skipped)
 	else:
 		finished.emit(success, failed, skipped)
+		call_deferred("_start_pending_regeneration")
+
+
+func _start_pending_regeneration():
+	if _running or (not _pending_full_regeneration and _pending_assets.is_empty()):
+		return
+
+	var assets: Array[AssetResource] = []
+	if not _pending_full_regeneration:
+		for asset: AssetResource in _pending_assets.values():
+			assets.append(asset)
+	var stale_only := _pending_stale_only
+	_clear_pending_regeneration()
+	start_regeneration(assets, stale_only)
+
+
+func _clear_pending_regeneration():
+	_pending_full_regeneration = false
+	_pending_stale_only = true
+	_pending_assets.clear()
 
 
 func _filter_assets(assets: Array[AssetResource]) -> Array[AssetResource]:

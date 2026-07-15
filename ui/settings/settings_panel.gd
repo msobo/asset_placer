@@ -18,6 +18,13 @@ var _thumbnail_regeneration_dialog: ThumbnailRegenerationDialog
 @onready var slider_value = %SliderValue
 @onready var palette_item_scale_h_slider: HSlider = %PaletteItemScaleHSlider
 @onready var palette_item_scale_value = %PaletteItemScaleValue
+@onready var auto_grid_enabled_check_box: CheckBox = %AutoGridEnabledCheckBox
+@onready var auto_grid_wall_u_spin_box: SpinBox = %AutoGridWallUSpinBox
+@onready var auto_grid_wall_v_spin_box: SpinBox = %AutoGridWallVSpinBox
+@onready var auto_grid_floor_u_spin_box: SpinBox = %AutoGridFloorUSpinBox
+@onready var auto_grid_floor_v_spin_box: SpinBox = %AutoGridFloorVSpinBox
+@onready var auto_grid_ceiling_u_spin_box: SpinBox = %AutoGridCeilingUSpinBox
+@onready var auto_grid_ceiling_v_spin_box: SpinBox = %AutoGridCeilingVSpinBox
 
 # Keybinds
 
@@ -65,6 +72,26 @@ func _ready():
 	)
 	trasform_step_spin_box.value_changed.connect(_presenter.set_default_transform_step)
 	rotation_step_spin_box.value_changed.connect(_presenter.set_rotation_step)
+	auto_grid_enabled_check_box.toggled.connect(_presenter.set_auto_grid_enabled)
+	var surfaces := AssetPlacerSettings.AutoGridSurface
+	auto_grid_wall_u_spin_box.value_changed.connect(
+		_presenter.set_auto_grid_step_component.bind(surfaces.Wall, 0)
+	)
+	auto_grid_wall_v_spin_box.value_changed.connect(
+		_presenter.set_auto_grid_step_component.bind(surfaces.Wall, 1)
+	)
+	auto_grid_floor_u_spin_box.value_changed.connect(
+		_presenter.set_auto_grid_step_component.bind(surfaces.Floor, 0)
+	)
+	auto_grid_floor_v_spin_box.value_changed.connect(
+		_presenter.set_auto_grid_step_component.bind(surfaces.Floor, 1)
+	)
+	auto_grid_ceiling_u_spin_box.value_changed.connect(
+		_presenter.set_auto_grid_step_component.bind(surfaces.Ceiling, 0)
+	)
+	auto_grid_ceiling_v_spin_box.value_changed.connect(
+		_presenter.set_auto_grid_step_component.bind(surfaces.Ceiling, 1)
+	)
 
 	var bindings := AssetPlacerSettings.Bindings
 	var set_binding := _presenter.set_binding
@@ -108,6 +135,13 @@ func _show_settings(setting: AssetPlacerSettings):
 	palette_item_scale_h_slider.set_value_no_signal(setting.palette_item_scale)
 	trasform_step_spin_box.set_value_no_signal(setting.transform_step)
 	rotation_step_spin_box.set_value_no_signal(setting.rotation_step)
+	auto_grid_enabled_check_box.set_pressed_no_signal(setting.auto_grid_enabled)
+	auto_grid_wall_u_spin_box.set_value_no_signal(setting.auto_grid_wall_step.x)
+	auto_grid_wall_v_spin_box.set_value_no_signal(setting.auto_grid_wall_step.y)
+	auto_grid_floor_u_spin_box.set_value_no_signal(setting.auto_grid_floor_step.x)
+	auto_grid_floor_v_spin_box.set_value_no_signal(setting.auto_grid_floor_step.y)
+	auto_grid_ceiling_u_spin_box.set_value_no_signal(setting.auto_grid_ceiling_step.x)
+	auto_grid_ceiling_v_spin_box.set_value_no_signal(setting.auto_grid_ceiling_step.y)
 
 	var bindings := AssetPlacerSettings.Bindings
 	kb_rotate.set_keybind(setting.bindings[bindings.Rotate])

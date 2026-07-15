@@ -17,9 +17,11 @@ signal asset_placed
 
 enum TransformMode { None, Rotate, Scale, Move }
 enum PlacementTool { Single, Brush }
+enum AutoGridType { None, Wall, Floor, Ceiling }
 
 static var instance: AssetPlacerPresenter
 static var transform_step: float = 0.1
+const _ASCII_ALPHANUMERIC := "abcdefghijklmnopqrstuvwxyz0123456789"
 
 var options: AssetPlacerOptions
 var transform_mode: TransformMode = TransformMode.None
@@ -38,12 +40,35 @@ var _parent: NodePath = NodePath("")
 var _last_plane_options := PlaneOptions.new(Vector3.UP, Vector3.ZERO)
 var _selected_node: Node3D
 var _active: bool = false
+var _plugin_settings := AssetPlacerSettings.default()
+var _active_collection_filters: Array[AssetCollection] = []
+var _auto_grid_active := false
+var _auto_grid_suppressed_collection_id := -1
+var _saved_snapping_enabled := false
+var _saved_grid_step := AssetPlacerOptions.DEFAULT_GRID_STEP
 
 
 func _init():
 	options = AssetPlacerOptions.new()
 	_selected_asset = null
 	instance = self
+
+
+func set_plugin_settings(settings: AssetPlacerSettings):
+	var was_enabled := _plugin_settings.auto_grid_enabled
+	_plugin_settings = settings
+	if was_enabled != settings.auto_grid_enabled:
+		_auto_grid_suppressed_collection_id = -1
+	_evaluate_auto_grid()
+
+
+func set_active_collection_filters(collections: Array[AssetCollection]):
+	var previous_id := _get_single_collection_id()
+	_active_collection_filters = collections.duplicate()
+	var current_id := _get_single_collection_id()
+	if previous_id != current_id:
+		_auto_grid_suppressed_collection_id = -1
+	_evaluate_auto_grid()
 
 
 func ready():
@@ -222,6 +247,7 @@ func set_grid_snap_u(value: float):
 	)
 	if is_equal_approx(options.snapping_grid_step.x, normalized):
 		return
+	_cancel_auto_grid_for_manual_override()
 	options.snapping_grid_step.x = normalized
 	options_changed.emit(options)
 
@@ -232,6 +258,7 @@ func set_grid_snap_v(value: float):
 	)
 	if is_equal_approx(options.snapping_grid_step.y, normalized):
 		return
+	_cancel_auto_grid_for_manual_override()
 	options.snapping_grid_step.y = normalized
 	options_changed.emit(options)
 
@@ -304,6 +331,9 @@ func _uniform_v3(value: float) -> Vector3:
 
 
 func set_grid_snapping_enabled(value: bool):
+	if options.snapping_enabled == value:
+		return
+	_cancel_auto_grid_for_manual_override()
 	options.snapping_enabled = value
 	if not value and placement_tool == PlacementTool.Brush:
 		set_placement_tool(PlacementTool.Single)
@@ -312,6 +342,92 @@ func set_grid_snapping_enabled(value: bool):
 
 func toggle_grid_snapping():
 	set_grid_snapping_enabled(!options.snapping_enabled)
+
+
+func _evaluate_auto_grid():
+	if not _plugin_settings.auto_grid_enabled or _active_collection_filters.size() != 1:
+		_restore_manual_grid_state()
+		return
+
+	var collection := _active_collection_filters[0]
+	var auto_grid_type := _classify_auto_grid_collection(collection.name)
+	if auto_grid_type == AutoGridType.None:
+		_restore_manual_grid_state()
+		return
+	if collection.id == _auto_grid_suppressed_collection_id:
+		return
+
+	if not _auto_grid_active:
+		_saved_snapping_enabled = options.snapping_enabled
+		_saved_grid_step = options.snapping_grid_step
+	_auto_grid_active = true
+	_set_grid_state(true, _get_auto_grid_step(auto_grid_type))
+
+
+func _restore_manual_grid_state():
+	if not _auto_grid_active:
+		return
+	_auto_grid_active = false
+	_set_grid_state(_saved_snapping_enabled, _saved_grid_step)
+
+
+func _cancel_auto_grid_for_manual_override():
+	if not _auto_grid_active:
+		return
+	_auto_grid_active = false
+	_auto_grid_suppressed_collection_id = _get_single_collection_id()
+
+
+func _set_grid_state(enabled: bool, step: Vector2):
+	var enabled_changed := options.snapping_enabled != enabled
+	var step_changed := not options.snapping_grid_step.is_equal_approx(step)
+	if not enabled_changed and not step_changed:
+		return
+	options.snapping_enabled = enabled
+	options.snapping_grid_step = step
+	if not enabled and placement_tool == PlacementTool.Brush:
+		set_placement_tool(PlacementTool.Single)
+	options_changed.emit(options)
+
+
+func _get_single_collection_id() -> int:
+	if _active_collection_filters.size() != 1:
+		return -1
+	return _active_collection_filters[0].id
+
+
+func _get_auto_grid_step(auto_grid_type: AutoGridType) -> Vector2:
+	match auto_grid_type:
+		AutoGridType.Wall:
+			return _plugin_settings.auto_grid_wall_step
+		AutoGridType.Floor:
+			return _plugin_settings.auto_grid_floor_step
+		AutoGridType.Ceiling:
+			return _plugin_settings.auto_grid_ceiling_step
+		_:
+			return AssetPlacerOptions.DEFAULT_GRID_STEP
+
+
+static func _classify_auto_grid_collection(collection_name: String) -> AutoGridType:
+	var normalized := collection_name.strip_edges().to_lower()
+	if _matches_auto_grid_prefix(normalized, "wall"):
+		return AutoGridType.Wall
+	if _matches_auto_grid_prefix(normalized, "floor"):
+		return AutoGridType.Floor
+	if _matches_auto_grid_prefix(normalized, "ceiling"):
+		return AutoGridType.Ceiling
+	return AutoGridType.None
+
+
+static func _matches_auto_grid_prefix(normalized_name: String, singular: String) -> bool:
+	for prefix in [singular, singular + "s"]:
+		if normalized_name == prefix:
+			return true
+		if normalized_name.begins_with(prefix):
+			var separator := normalized_name.substr(prefix.length(), 1)
+			if not _ASCII_ALPHANUMERIC.contains(separator):
+				return true
+	return false
 
 
 func set_min_rotation(vector: Vector3):

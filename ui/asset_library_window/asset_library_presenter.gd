@@ -3,6 +3,7 @@ extends RefCounted
 
 signal assets_loaded(assets: Array[AssetResource])
 signal asset_selection_change
+signal active_collection_filters_changed(collections: Array[AssetCollection])
 signal show_filter_info(size: int)
 signal show_empty_view(type: EmptyType)
 
@@ -27,6 +28,7 @@ func _init():
 
 func on_ready():
 	show_filter_info.emit(0)
+	active_collection_filters_changed.emit(_active_collections)
 	_asset_library.assets_changed.connect(_filter_by_collections_and_query)
 	_asset_library.folders_changed.connect(sync)
 	synchronizer.sync_complete.connect(_on_sync_complete)
@@ -92,6 +94,7 @@ func toggle_collection_filter(collection: AssetCollection, enabled: bool):
 	else:
 		_active_collections = _active_collections.filter(func(a): return a.id != collection.id)
 	show_filter_info.emit(_active_collections.size())
+	active_collection_filters_changed.emit(_active_collections)
 	_filter_by_collections_and_query()
 
 

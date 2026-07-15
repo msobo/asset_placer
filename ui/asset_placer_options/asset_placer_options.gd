@@ -15,6 +15,7 @@ var _settings_presenter := SettingsPresenter.new()
 @onready var uniform_scale_check_box: CheckBox = %UniformScaleCheckBox
 @onready var parent_button: Button = %ParentButton
 @onready var placement_mode_options_button: OptionButton = %PlacementModeOptionsButton
+@onready var grid_brush_hint_label: Label = %GridBrushHintLabel
 @onready var plane_axis_spin_box: SpinBoxVector3 = %PlaneAxisSpinBox
 @onready var plane_origin_spin_box: SpinBoxVector3 = %PlaneOriginSpinBox
 @onready var plane_origin_container: Container = %PlaneOriginContainer
@@ -85,6 +86,8 @@ func _ready():
 
 func _show_settings(settings: AssetPlacerSettings):
 	plane_grid_step_spin_box.set_value_no_signal(settings.plane_placement_step)
+	var brush_binding: APInputOption = settings.bindings[AssetPlacerSettings.Bindings.ToggleBrush]
+	grid_brush_hint_label.text = "Grid Brush shortcut: %s" % brush_binding.get_display_name()
 
 
 func _show_terrain_3d_selector():

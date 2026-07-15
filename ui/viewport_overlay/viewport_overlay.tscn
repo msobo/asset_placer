@@ -149,9 +149,8 @@ text = "(Q)"
 
 [node name="BrushModeLabel" type="Label" parent="MarginContainer3/HBoxContainer"]
 unique_name_in_owner = true
-visible = false
 layout_mode = 2
-text = "B: Brush · LMB Paint · Shift Line · Ctrl Fill"
+text = "Grid Brush shortcut: B"
 
 [node name="ErrorContainer" type="PanelContainer" parent="." unique_id=982228611]
 unique_name_in_owner = true

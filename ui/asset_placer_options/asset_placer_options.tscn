@@ -197,6 +197,14 @@ max = Vector3(1, 1, 1)
 normalized = true
 metadata/_custom_type_script = "uid://btqju8qjrlawq"
 
+[node name="GridBrushHintLabel" type="Label" parent="VBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(315, 0)
+layout_mode = 2
+tooltip_text = "Enabling Grid Brush automatically activates Plane Placement Mode and grid snapping."
+text = "Grid Brush shortcut: B"
+autowrap_mode = 2
+
 [node name="Snapping" type="BoxContainer" parent="VBoxContainer" unique_id=22742712]
 layout_mode = 2
 

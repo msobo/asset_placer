@@ -6,6 +6,9 @@ const OVERLAY_PALETTE_BUTTON_BASE := Vector2(48, 48)
 var _error_position: Vector2
 var _error_hidden_position: Vector2
 var _last_palette_assets: Array[AssetResource] = []
+var _placement_tool := AssetPlacerPresenter.PlacementTool.Single
+var _brush_shortcut_name := "Unassigned"
+var _brush_shortcut_assigned := false
 
 @onready var rotate_check_button: CheckBox = %RotateCheckButton
 @onready var scale_check_button: CheckBox = %ScaleCheckButton
@@ -106,7 +109,20 @@ func set_placement_mode(mode: GapPlacementMode):
 
 
 func set_placement_tool(tool: AssetPlacerPresenter.PlacementTool):
-	brush_mode_label.visible = tool == AssetPlacerPresenter.PlacementTool.Brush
+	_placement_tool = tool
+	_update_brush_hint()
+
+
+func _update_brush_hint():
+	if _placement_tool == AssetPlacerPresenter.PlacementTool.Brush:
+		brush_mode_label.text = (
+			"%s: Brush · LMB Paint · Shift Line · Ctrl Fill" % _brush_shortcut_name
+			if _brush_shortcut_assigned
+			else "Brush active · LMB Paint · Shift Line · Ctrl Fill"
+		)
+	else:
+		brush_mode_label.text = "Grid Brush shortcut: %s" % _brush_shortcut_name
+	brush_mode_label.show()
 
 
 func show_error(message: String):
@@ -141,10 +157,10 @@ func show_settings(settings: AssetPlacerSettings):
 	placement_shortcut_label.text = (
 		"(%s)" % settings.bindings[AssetPlacerSettings.Bindings.TogglePlaneMode].get_display_name()
 	)
-	brush_mode_label.text = (
-		"%s: Brush · LMB Paint · Shift Line · Ctrl Fill"
-		% settings.bindings[AssetPlacerSettings.Bindings.ToggleBrush].get_display_name()
-	)
+	var brush_binding: APInputOption = settings.bindings[AssetPlacerSettings.Bindings.ToggleBrush]
+	_brush_shortcut_name = brush_binding.get_display_name()
+	_brush_shortcut_assigned = not brush_binding.equals(APInputOption.none())
+	_update_brush_hint()
 
 
 func show_options(options: AssetPlacerOptions):

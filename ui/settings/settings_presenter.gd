@@ -61,6 +61,37 @@ func set_rotation_step(value: float):
 	_repository.set_settings(settings)
 
 
+func set_auto_grid_enabled(value: bool):
+	var settings = _repository.get_settings()
+	settings.auto_grid_enabled = value
+	_repository.set_settings(settings)
+
+
+func set_auto_grid_step_component(
+	value: float, surface: AssetPlacerSettings.AutoGridSurface, axis: int
+):
+	var settings = _repository.get_settings()
+	var step: Vector2
+	match surface:
+		AssetPlacerSettings.AutoGridSurface.Wall:
+			step = settings.auto_grid_wall_step
+		AssetPlacerSettings.AutoGridSurface.Floor:
+			step = settings.auto_grid_floor_step
+		AssetPlacerSettings.AutoGridSurface.Ceiling:
+			step = settings.auto_grid_ceiling_step
+		_:
+			return
+	step[axis] = value
+	match surface:
+		AssetPlacerSettings.AutoGridSurface.Wall:
+			settings.auto_grid_wall_step = step
+		AssetPlacerSettings.AutoGridSurface.Floor:
+			settings.auto_grid_floor_step = step
+		AssetPlacerSettings.AutoGridSurface.Ceiling:
+			settings.auto_grid_ceiling_step = step
+	_repository.set_settings(settings)
+
+
 func set_preview_material(material: String):
 	if material.is_empty():
 		return

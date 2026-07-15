@@ -23,6 +23,7 @@ This is Godot Editor plugin that allows for quick asset placement and management
 - **Custom thumbnail rendering** - Generated previews with cache storage and a regeneration option in Settings
 - Filter Assets by their name and collection
 - Grid snapping when placing assets
+- **AutoGrid from Collection Filters** - Automatically apply configurable U/V grid steps for filtered wall, floor, and ceiling collections
 - **Grid Brush** - Paint assets freehand, as straight grid lines, or across filled rectangular areas in Plane Placement Mode
 - **One Asset per Grid Cell** - Brush strokes and regular plane placements replace existing Asset Placer objects in occupied cells without affecting unrelated nodes or assets on other height levels
 - **Configurable Grid Step** - Set a square grid size from 0.01 to 1000 world units; the visible plane grid updates automatically
@@ -119,6 +120,26 @@ Each grid cell contains at most one object placed by Asset Placer. Painting into
 An entire drag is recorded as a single Undo/Redo action. The preview's rotation and scale at the start of the drag are applied consistently to the complete stroke. A brush preview and viewport overlay hints show the active brush behavior.
 
 Set the square **Grid Step** in Asset Placement Options to any value from `0.01` to `1000` world units. The visible plane grid scales with this value. If the setting changes during a brush stroke, the current stroke keeps the grid size with which it started.
+
+#### AutoGrid from Collection Filters
+
+AutoGrid automatically enables Grid Snapping and applies a configured U/V grid step when the Assets tab has **exactly one** matching collection filter selected. Configure the feature and its grid steps in **Settings → Auto Grid from Collection Filter**.
+
+The default steps are:
+
+- Wall: 2 × 2
+- Floor: 4 × 4
+- Ceiling: 4 × 4
+
+For AutoGrid to recognize a collection, its name must begin with one of these type names, followed by the end of the name or a separator:
+
+- Wall: wall, walls, walls_pack
+- Floor: floor, floors, floor-pack
+- Ceiling: ceiling, ceilings, ceilings modular
+
+Matching is case-insensitive. Names such as stone_walls and wallsXYZ do not activate AutoGrid because the type is not the leading collection name or is missing a separator.
+
+When you select no collection, multiple collections, or a collection without one of these prefixes, the previous manual Grid Snapping state is restored. Manually changing Grid Snapping or its U/V value temporarily disables AutoGrid for the current filter; switching the filter enables automatic matching again.
 
 #### Terrain 3d Placement
 
@@ -241,6 +262,7 @@ When multiple assets are selected, the star button is always visible for easy ba
 - **Thumbnail UI Scale** - Adjust the size of thumbnails in the Assets Panel (default: 1.0)
 - **Regenerate Thumbnails** - Rebuild generated asset previews from Settings when needed
 - **Asset Palette Item Scale** - Adjust the size of palette buttons in both the Palette tab and viewport overlay (default: 1.0)
+- **Auto Grid from Collection Filter** - Enable automatic Grid Snapping for a single filtered wall, floor, or ceiling collection; configure independent U/V steps for each type (defaults: Wall 2 × 2, Floor/Ceiling 4 × 4). Collection names must start with wall/walls, floor/floors, or ceiling/ceilings and use a separator when further text follows, e.g. walls_pack.
 - **Plane Mode Toggle** - Configure plane placement mode behavior
 - **Grid Step** - Set the square Plane Placement grid size from 0.01 to 1000 world units
 - **Asset Library Path** - Set a custom location for the `asset_library.json` file, useful for version control and team sharing

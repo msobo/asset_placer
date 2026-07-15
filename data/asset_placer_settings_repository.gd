@@ -9,6 +9,10 @@ const KEY_PLANE_PLACEMENT_STEP: String = "general/plane_placement_step"
 const KEY_ROTATION_STEP: String = "general/rotation_step_normal"
 const KEY_UI_SCALE: String = "general/ui_scale"
 const KEY_PALETTE_ITEM_SCALE: String = "general/palette_item_scale"
+const KEY_AUTO_GRID_ENABLED: String = "general/auto_grid_enabled"
+const KEY_AUTO_GRID_WALL_STEP: String = "general/auto_grid_wall_step"
+const KEY_AUTO_GRID_FLOOR_STEP: String = "general/auto_grid_floor_step"
+const KEY_AUTO_GRID_CEILING_STEP: String = "general/auto_grid_ceiling_step"
 const KEY_MANAGE_COLLECTIONS_DIALOG_SIZE: String = "ui/manage_collections_dialog_size"
 
 # Keybinds
@@ -94,6 +98,16 @@ func set_settings(settings: AssetPlacerSettings):
 	_set_editor_setting(KEY_ROTATION_STEP, settings.rotation_step)
 	_set_editor_setting(KEY_UI_SCALE, settings.ui_scale)
 	_set_editor_setting(KEY_PALETTE_ITEM_SCALE, settings.palette_item_scale)
+	_set_editor_setting(KEY_AUTO_GRID_ENABLED, settings.auto_grid_enabled)
+	_set_editor_setting(
+		KEY_AUTO_GRID_WALL_STEP, _normalize_grid_step(settings.auto_grid_wall_step)
+	)
+	_set_editor_setting(
+		KEY_AUTO_GRID_FLOOR_STEP, _normalize_grid_step(settings.auto_grid_floor_step)
+	)
+	_set_editor_setting(
+		KEY_AUTO_GRID_CEILING_STEP, _normalize_grid_step(settings.auto_grid_ceiling_step)
+	)
 
 	_set_project_setting(KEY_GENERAL_PREVIEW_MATERIAL, settings.preview_material_resource)
 	_set_project_setting(KEY_GENERAL_PLANE_MATERIAL, settings.plane_material_resource)
@@ -121,6 +135,18 @@ func get_settings() -> AssetPlacerSettings:
 	settings.ui_scale = _get_editor_setting(KEY_UI_SCALE, settings.ui_scale)
 	settings.palette_item_scale = _get_editor_setting(
 		KEY_PALETTE_ITEM_SCALE, settings.palette_item_scale
+	)
+	settings.auto_grid_enabled = _get_editor_setting(
+		KEY_AUTO_GRID_ENABLED, settings.auto_grid_enabled
+	)
+	settings.auto_grid_wall_step = _normalize_grid_step(
+		_get_editor_setting(KEY_AUTO_GRID_WALL_STEP, settings.auto_grid_wall_step)
+	)
+	settings.auto_grid_floor_step = _normalize_grid_step(
+		_get_editor_setting(KEY_AUTO_GRID_FLOOR_STEP, settings.auto_grid_floor_step)
+	)
+	settings.auto_grid_ceiling_step = _normalize_grid_step(
+		_get_editor_setting(KEY_AUTO_GRID_CEILING_STEP, settings.auto_grid_ceiling_step)
 	)
 	settings.preview_material_resource = _get_project_setting(
 		KEY_GENERAL_PREVIEW_MATERIAL, settings.preview_material_resource
@@ -169,6 +195,15 @@ func _get_editor_setting(key: String, default: Variant) -> Variant:
 		return _editor_settings.get(KEY_BASE % key)
 	else:
 		return default
+
+
+func _normalize_grid_step(value: Variant) -> Vector2:
+	if value is not Vector2:
+		return AssetPlacerOptions.DEFAULT_GRID_STEP
+	return Vector2(
+		clampf(value.x, AssetPlacerOptions.MIN_GRID_STEP, AssetPlacerOptions.MAX_GRID_STEP),
+		clampf(value.y, AssetPlacerOptions.MIN_GRID_STEP, AssetPlacerOptions.MAX_GRID_STEP)
+	)
 
 
 func _validate_and_resolve_conflicts(

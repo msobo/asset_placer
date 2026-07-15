@@ -53,6 +53,7 @@ func _enter_tree():
 	_thumbnail_coordinator = ThumbnailGenerationCoordinator.new()
 	get_tree().root.add_child(_thumbnail_coordinator)
 	_presenter = AssetPlacerPresenter.new()
+	_presenter.set_plugin_settings(current_settings)
 	AssetPlacerDockPresenter.new()
 	_plane_preview = (
 		load("res://addons/asset_placer/ui/plane_preview/plan_preview.tscn").instantiate()
@@ -199,6 +200,7 @@ func _initialize_data_layer():
 
 func _react_to_settings_change(settings: AssetPlacerSettings):
 	self.current_settings = settings
+	_presenter.set_plugin_settings(settings)
 	_asset_placer.set_plugin_settings(settings)
 
 

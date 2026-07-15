@@ -36,6 +36,9 @@ func _ready():
 
 	presenter.assets_loaded.connect(show_assets)
 	presenter.show_filter_info.connect(show_filter_info)
+	presenter.active_collection_filters_changed.connect(
+		placer_presenter.set_active_collection_filters
+	)
 	placer_presenter.asset_selected.connect(set_selected_asset)
 	placer_presenter.asset_deselected.connect(clear_selected_asset)
 	empty_collection_view_add_folder_btn.pressed.connect(show_folder_dialog)

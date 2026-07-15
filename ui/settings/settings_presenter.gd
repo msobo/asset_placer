@@ -61,6 +61,18 @@ func set_rotation_step(value: float):
 	_repository.set_settings(settings)
 
 
+func set_drag_to_rotate_enabled(value: bool):
+	var settings = _repository.get_settings()
+	settings.drag_to_rotate_enabled = value
+	_repository.set_settings(settings)
+
+
+func set_drag_rotation_sensitivity(value: float):
+	var settings = _repository.get_settings()
+	settings.drag_rotation_sensitivity = value
+	_repository.set_settings(settings)
+
+
 func set_auto_grid_enabled(value: bool):
 	var settings = _repository.get_settings()
 	settings.auto_grid_enabled = value

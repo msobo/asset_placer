@@ -20,6 +20,8 @@ var _brush_shortcut_assigned := false
 @onready var error_label: Label = %ErrorLabel
 @onready var error_container: Container = %ErrorContainer
 @onready var error_timer: Timer = %ErrorTimer
+@onready var rotation_delta_container: PanelContainer = %RotationDeltaContainer
+@onready var rotation_delta_label: Label = %RotationDeltaLabel
 @onready var snapping_switch: CheckButton = %SnappingSwitch
 @onready var placement_shortcut_label: Label = %PlacementShortcutLabel
 @onready var brush_mode_label: Label = %BrushModeLabel
@@ -140,9 +142,12 @@ func hide_error():
 func show_settings(settings: AssetPlacerSettings):
 	if not _last_palette_assets.is_empty():
 		show_asset_pallete(_last_palette_assets)
-	rotate_check_button.text = (
-		"%s: To Rotate" % settings.bindings[AssetPlacerSettings.Bindings.Rotate].get_display_name()
-	)
+	var rotate_hint := "To Rotate"
+	if settings.drag_to_rotate_enabled:
+		rotate_hint += " · Alt+LMB Drag"
+	rotate_check_button.text = "%s: %s" % [
+		settings.bindings[AssetPlacerSettings.Bindings.Rotate].get_display_name(), rotate_hint
+	]
 	scale_check_button.text = (
 		"%s: To Scale" % settings.bindings[AssetPlacerSettings.Bindings.Scale].get_display_name()
 	)
@@ -173,5 +178,28 @@ func set_axis(vector: Vector3):
 	z_check_button.button_pressed = vector.z == 1
 
 
+func show_rotation_delta(camera: Camera3D, world_position: Vector3, degrees: float):
+	if not is_instance_valid(camera) or camera.is_position_behind(world_position):
+		rotation_delta_container.hide()
+		return
+	if absf(degrees) < 0.05:
+		degrees = 0.0
+	var prefix := "+" if degrees >= 0.0 else ""
+	rotation_delta_label.text = "%s%.1f°" % [prefix, degrees]
+	rotation_delta_container.reset_size()
+	var screen_position := camera.unproject_position(world_position)
+	var label_size := rotation_delta_container.size
+	var target := screen_position + Vector2(-label_size.x * 0.5, -label_size.y - 24.0)
+	var max_position := (size - label_size).max(Vector2.ZERO)
+	rotation_delta_container.position = target.clamp(Vector2.ZERO, max_position)
+	rotation_delta_container.show()
+
+
+func hide_rotation_delta():
+	rotation_delta_container.hide()
+
+
 func _set_overlay_visible(visible: bool):
 	self.visible = visible
+	if not visible:
+		hide_rotation_delta()

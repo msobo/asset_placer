@@ -31,6 +31,9 @@ var _brush_grid_step := Vector2.ONE
 var _brush_start_anchor := Vector3.ZERO
 var _brush_transform := Transform3D.IDENTITY
 var _brush_asset: AssetResource
+var _rotation_drag_active := false
+var _rotation_drag_start_transform := Transform3D.IDENTITY
+var _rotation_drag_axis := Vector3.UP
 
 var _is_node_transform_mode: bool = false
 var _original_transform: Transform3D
@@ -466,6 +469,44 @@ func transform_preview(
 			return false
 
 
+func begin_rotation_drag(axis: Vector3) -> bool:
+	if not is_instance_valid(preview_node) or _brush_active or axis.is_zero_approx():
+		return false
+	_rotation_drag_start_transform = preview_node.transform
+	_rotation_drag_axis = axis.normalized()
+	_rotation_drag_active = true
+	return true
+
+
+func update_rotation_drag(angle_degrees: float) -> bool:
+	if not _rotation_drag_active or not is_instance_valid(preview_node):
+		_rotation_drag_active = false
+		return false
+	preview_node.transform = _rotation_drag_start_transform
+	preview_node.rotate(_rotation_drag_axis, deg_to_rad(angle_degrees))
+	return true
+
+
+func finish_rotation_drag():
+	_rotation_drag_active = false
+
+
+func cancel_rotation_drag():
+	if _rotation_drag_active and is_instance_valid(preview_node):
+		preview_node.transform = _rotation_drag_start_transform
+	_rotation_drag_active = false
+
+
+func has_active_rotation_drag() -> bool:
+	return _rotation_drag_active
+
+
+func get_preview_global_position() -> Vector3:
+	if is_instance_valid(preview_node):
+		return preview_node.global_position
+	return Vector3.ZERO
+
+
 func get_collision_rids(node: Node) -> Array:
 	var rids = []
 	if node is CollisionObject3D:
@@ -576,6 +617,7 @@ func _undo_node_transform(node: Node3D, original_transform: Transform3D):
 
 
 func stop_placement():
+	cancel_rotation_drag()
 	cancel_brush_stroke()
 	if is_instance_valid(_brush_preview):
 		_brush_preview.queue_free()

@@ -30,6 +30,7 @@ var _palette_session_state: AssetPaletteSessionState
 # Actual type is EditorDock
 var _dock: MarginContainer
 var _asset_placer_button: Button
+var _rotation_drag_degrees := 0.0
 
 var _migration_collection_id = null
 
@@ -103,6 +104,7 @@ func _enter_tree():
 
 
 func _exit_tree():
+	_cancel_rotation_drag()
 	if ClassDB.class_exists(&"EditorDock"):
 		if is_instance_valid(_dock):
 			call("remove_dock", _dock)
@@ -172,6 +174,7 @@ func _handles(object):
 
 
 func _handle_scene_changed(scene: Node):
+	_cancel_rotation_drag()
 	if scene is Node3D:
 		_presenter.select_parent(scene.get_path())
 	else:
@@ -199,6 +202,8 @@ func _initialize_data_layer():
 
 
 func _react_to_settings_change(settings: AssetPlacerSettings):
+	if _asset_placer.has_active_rotation_drag() and not settings.drag_to_rotate_enabled:
+		_cancel_rotation_drag()
 	self.current_settings = settings
 	_presenter.set_plugin_settings(settings)
 	_asset_placer.set_plugin_settings(settings)
@@ -215,6 +220,7 @@ func _on_dock_visibility_changed():
 
 
 func start_placement(asset: AssetResource):
+	_cancel_rotation_drag()
 	EditorInterface.set_main_screen_editor("3D")
 	AssetPlacerContextUtil.select_context()
 	_asset_placer.start_placement(get_tree().root, asset, _presenter.placement_mode)
@@ -226,6 +232,7 @@ func _on_node_transform_mode_ended():
 
 
 func _handle_in_place_transform():
+	_cancel_rotation_drag()
 	if _presenter.is_node_transform_mode():
 		_presenter.end_node_transform_mode()
 		_asset_placer.stop_placement()
@@ -245,6 +252,7 @@ func _handle_in_place_transform():
 
 
 func _deactivate_plugin() -> void:
+	_cancel_rotation_drag()
 	if _presenter.is_node_transform_mode():
 		_presenter.end_node_transform_mode()
 	_presenter.clear_selection()
@@ -282,6 +290,9 @@ func _forward_3d_gui_input(viewport_camera, event):
 	# Only process other inputs when plugin is active
 	if not _presenter.plugin_is_active():
 		return EditorPlugin.AFTER_GUI_INPUT_PASS
+
+	if _handle_rotation_drag_input(viewport_camera, event):
+		return _handled()
 
 	if Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT):
 		return false
@@ -333,12 +344,22 @@ func _forward_3d_gui_input(viewport_camera, event):
 			_presenter.toggle_brush()
 		return _handled()
 
-	if current_settings.binding_positive_transform.is_pressed(event):
+	var drag_replaces_rotation := (
+		current_settings.drag_to_rotate_enabled
+		and _presenter.transform_mode == AssetPlacerPresenter.TransformMode.Rotate
+	)
+	if (
+		not drag_replaces_rotation
+		and current_settings.binding_positive_transform.is_pressed(event)
+	):
 		var axis := _presenter.preview_transform_axis
 		if _asset_placer.transform_preview(_presenter.transform_mode, axis, 1):
 			return _handled()
 
-	elif current_settings.binding_negative_transform.is_pressed(event):
+	elif (
+		not drag_replaces_rotation
+		and current_settings.binding_negative_transform.is_pressed(event)
+	):
 		var axis := _presenter.preview_transform_axis
 		if _asset_placer.transform_preview(_presenter.transform_mode, axis, -1):
 			return _handled()
@@ -401,6 +422,79 @@ func _forward_3d_gui_input(viewport_camera, event):
 					return _handled()
 
 	return EditorPlugin.AFTER_GUI_INPUT_PASS
+
+
+func _handle_rotation_drag_input(viewport_camera: Camera3D, event: InputEvent) -> bool:
+	if _asset_placer.has_active_rotation_drag():
+		if event is InputEventKey:
+			if event.is_pressed() and event.keycode == KEY_ESCAPE:
+				_cancel_rotation_drag()
+			return true
+		if event is InputEventMouseMotion:
+			if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+				_finish_rotation_drag()
+				return true
+			_rotation_drag_degrees += (
+				event.relative.x * current_settings.drag_rotation_sensitivity
+			)
+			var applied_degrees := _rotation_drag_degrees
+			if event.ctrl_pressed and current_settings.rotation_step > 0.0:
+				applied_degrees = snappedf(applied_degrees, current_settings.rotation_step)
+			if _asset_placer.update_rotation_drag(applied_degrees):
+				_show_rotation_drag_overlay(viewport_camera, applied_degrees)
+			else:
+				_hide_rotation_drag_overlay()
+			return true
+		if (
+			event is InputEventMouseButton
+			and event.button_index == MOUSE_BUTTON_LEFT
+			and not event.pressed
+		):
+			_finish_rotation_drag()
+		return true
+
+	if (
+		not current_settings.drag_to_rotate_enabled
+		or _presenter.transform_mode != AssetPlacerPresenter.TransformMode.Rotate
+		or _asset_placer.has_active_brush_stroke()
+	):
+		return false
+	if (
+		event is InputEventMouseButton
+		and event.button_index == MOUSE_BUTTON_LEFT
+		and event.pressed
+		and event.alt_pressed
+	):
+		if _asset_placer.begin_rotation_drag(_presenter.preview_transform_axis):
+			_rotation_drag_degrees = 0.0
+			_show_rotation_drag_overlay(viewport_camera, 0.0)
+			return true
+	return false
+
+
+func _show_rotation_drag_overlay(camera: Camera3D, degrees: float):
+	if is_instance_valid(overlay):
+		overlay.call(
+			"show_rotation_delta", camera, _asset_placer.get_preview_global_position(), degrees
+		)
+
+
+func _hide_rotation_drag_overlay():
+	if is_instance_valid(overlay):
+		overlay.call("hide_rotation_delta")
+
+
+func _finish_rotation_drag():
+	_asset_placer.finish_rotation_drag()
+	_rotation_drag_degrees = 0.0
+	_hide_rotation_drag_overlay()
+
+
+func _cancel_rotation_drag():
+	if is_instance_valid(_asset_placer):
+		_asset_placer.cancel_rotation_drag()
+	_rotation_drag_degrees = 0.0
+	_hide_rotation_drag_overlay()
 
 
 func _on_placement_tool_changed(tool: AssetPlacerPresenter.PlacementTool):

@@ -24,9 +24,14 @@ enum AutoGridSurface { Wall, Floor, Ceiling }
 const DEFAULT_PREVIEW_MATERIAL := "res://addons/asset_placer/utils/preview_material.tres"
 const DEFAULT_PLANE_MATERIAL := "res://addons/asset_placer/ui/plane_preview/plane_preview_material.tres"
 const DEFAULT_ASSET_LIBRARY_PATH := AssetLibraryParser.DEFAULT_SAVE_PATH
+const DEFAULT_DRAG_ROTATION_SENSITIVITY := 0.5
+const MIN_DRAG_ROTATION_SENSITIVITY := 0.01
+const MAX_DRAG_ROTATION_SENSITIVITY := 10.0
 var transform_step: float
 var plane_placement_step: float
 var rotation_step: float
+var drag_to_rotate_enabled: bool
+var drag_rotation_sensitivity: float
 var bindings: Dictionary
 var ui_scale: float
 var palette_item_scale: float
@@ -77,6 +82,8 @@ static func default() -> AssetPlacerSettings:
 	settings.transform_step = 0.1
 	settings.plane_placement_step = 0.2
 	settings.rotation_step = 5
+	settings.drag_to_rotate_enabled = false
+	settings.drag_rotation_sensitivity = DEFAULT_DRAG_ROTATION_SENSITIVITY
 	settings.ui_scale = 1.0
 	settings.palette_item_scale = 1.0
 	settings.auto_grid_enabled = true

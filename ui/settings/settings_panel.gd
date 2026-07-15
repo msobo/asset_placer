@@ -14,6 +14,10 @@ var _thumbnail_regeneration_dialog: ThumbnailRegenerationDialog
 
 @onready var trasform_step_spin_box: SpinBox = %TrasformStepSpinBox
 @onready var rotation_step_spin_box: SpinBox = %RotationStepSpinBox
+@onready var drag_to_rotate_check_box: CheckBox = %DragToRotateCheckBox
+@onready var drag_rotation_sensitivity_spin_box: SpinBox = (
+	%DragRotationSensitivitySpinBox
+)
 @onready var ui_scale_h_slider: HSlider = %UIScaleHSlider
 @onready var slider_value = %SliderValue
 @onready var palette_item_scale_h_slider: HSlider = %PaletteItemScaleHSlider
@@ -72,6 +76,10 @@ func _ready():
 	)
 	trasform_step_spin_box.value_changed.connect(_presenter.set_default_transform_step)
 	rotation_step_spin_box.value_changed.connect(_presenter.set_rotation_step)
+	drag_to_rotate_check_box.toggled.connect(_presenter.set_drag_to_rotate_enabled)
+	drag_rotation_sensitivity_spin_box.value_changed.connect(
+		_presenter.set_drag_rotation_sensitivity
+	)
 	auto_grid_enabled_check_box.toggled.connect(_presenter.set_auto_grid_enabled)
 	var surfaces := AssetPlacerSettings.AutoGridSurface
 	auto_grid_wall_u_spin_box.value_changed.connect(
@@ -135,6 +143,9 @@ func _show_settings(setting: AssetPlacerSettings):
 	palette_item_scale_h_slider.set_value_no_signal(setting.palette_item_scale)
 	trasform_step_spin_box.set_value_no_signal(setting.transform_step)
 	rotation_step_spin_box.set_value_no_signal(setting.rotation_step)
+	drag_to_rotate_check_box.set_pressed_no_signal(setting.drag_to_rotate_enabled)
+	drag_rotation_sensitivity_spin_box.set_value_no_signal(setting.drag_rotation_sensitivity)
+	drag_rotation_sensitivity_spin_box.editable = setting.drag_to_rotate_enabled
 	auto_grid_enabled_check_box.set_pressed_no_signal(setting.auto_grid_enabled)
 	auto_grid_wall_u_spin_box.set_value_no_signal(setting.auto_grid_wall_step.x)
 	auto_grid_wall_v_spin_box.set_value_no_signal(setting.auto_grid_wall_step.y)

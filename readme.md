@@ -188,7 +188,7 @@ Assets without a primary collection will be placed directly under the parent nod
 
 You can modify the preview of the asset before placement. This includes options for rotation and scaling, allowing users to visualize how the asset will appear in the scene prior to placement, do quick and precise adjustment modifications.
 ![addon_viewport_controls.png](docs/addon_viewport_controls.png)
-Specific transformation mode can be enabled by pressing button while in placement mode (Asset is selected) and transformations can be applied by Mouse Wheel:
+Specific transformation mode can be enabled by pressing button while in placement mode (Asset is selected). By default, transformations are applied by Mouse Wheel:
 
 - `Mouse Wheel Up`: "Positive" transformation
 - `Mouse Wheel Down`: "Negative" transformation
@@ -205,6 +205,19 @@ This also requires an ability to select active Axis for the transformation. This
 - `Y` to select Y axis
 - `Z` to select Z axis
 
+##### Drag-to-Rotate Mode
+
+The default rotation input remains the mouse wheel. To use a Blender-style drag workflow, enable **Drag to Rotate (Alt+LMB)** in the Asset Placer Settings. The option is disabled by default.
+
+When Rotate mode is active:
+
+- Hold `Alt` and drag with the left mouse button to rotate horizontally around the selected axis.
+- The signed angle changed during the current drag is shown next to the asset (for example, `+37.5°`).
+- Hold `Ctrl` while dragging to snap to the configured **Rotation Step**.
+- Release the left mouse button to keep the rotation, or press `Esc` to restore the transform from before the drag.
+
+**Drag Sensitivity (Degrees/Pixel)** controls how much rotation each horizontal mouse pixel applies. Drag-to-Rotate is available for both asset previews and In Place Transform Mode. When enabled, mouse-wheel rotation is replaced only for rotation; scale and translation keep their existing wheel bindings.
+
 #### In Place Transform Mode
 
  **In Place Transform Mode** allows you to apply transformations to existing nodes in your scene using the same Asset Placer transformation workflow. This is useful when you want to adjust nodes that are already placed in your scene.
@@ -215,7 +228,7 @@ To use In Place Transform Mode:
 2. Press `Shift+E` (default shortcut, configurable in Settings) to enter In Place Transform Mode
 3. Use the same transformation shortcuts (`E` for rotate, `R` for scale, `W` for translate) to modify the selected node
 4. Use `X`, `Y`, `Z` keys to select the transformation axis
-5. Apply transformations with Mouse Wheel Up/Down
+5. Apply transformations with Mouse Wheel Up/Down, or use `Alt+LMB` when Drag to Rotate is enabled
 
 The viewport overlay will display the current transformation mode and active axis, just like in preview placement mode.
 
@@ -278,7 +291,7 @@ Customize shortcuts for all Asset Placer actions:
 - Toggle Snapping (Default: `S`)
 - Toggle Grid Brush (Default: `B`)
 - Toggle X, Y, Z Axis (Default: `X`, `Y`, `Z`)
-- Transform Apply (Default: Mouse Wheel Up/Down)
+- Transform Apply (Default: Mouse Wheel Up/Down; optional rotation drag: `Alt+LMB`)
 - In Place Transform Mode (Default: `Shift+E`)
 - Palette Next (Default: `Tab`)
 - Palette Previous (Default: `Shift+Tab`)
@@ -287,6 +300,8 @@ Customize shortcuts for all Asset Placer actions:
 Key bindings support Mouse Button and Modifier Combinations (Ctrl, Shift, Alt), allowing you to avoid conflicts with existing Godot shortcuts. The Settings Panel includes conflict detection that will highlight conflicting keys in red.
 
 All settings are persisted across Godot sessions within EditorSettings and apply to all your projects.
+
+The Settings Panel also provides **Drag to Rotate (Alt+LMB)** and **Drag Sensitivity**. Drag rotation affects both asset previews and In Place Transform Mode; it replaces Mouse Wheel only for rotation, while scale and translation keep their configured positive/negative transform bindings.
 
 ## Known Issues
 

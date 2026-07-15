@@ -7,6 +7,8 @@ const KEY_BASE = "asset_placer/%s"
 const KEY_TRANSFORM_STEP: String = "general/transform_step_normal"
 const KEY_PLANE_PLACEMENT_STEP: String = "general/plane_placement_step"
 const KEY_ROTATION_STEP: String = "general/rotation_step_normal"
+const KEY_DRAG_TO_ROTATE_ENABLED: String = "general/drag_to_rotate_enabled"
+const KEY_DRAG_ROTATION_SENSITIVITY: String = "general/drag_rotation_sensitivity"
 const KEY_UI_SCALE: String = "general/ui_scale"
 const KEY_PALETTE_ITEM_SCALE: String = "general/palette_item_scale"
 const KEY_AUTO_GRID_ENABLED: String = "general/auto_grid_enabled"
@@ -96,6 +98,11 @@ func set_settings(settings: AssetPlacerSettings):
 	_set_editor_setting(KEY_TRANSFORM_STEP, settings.transform_step)
 	_set_editor_setting(KEY_PLANE_PLACEMENT_STEP, settings.plane_placement_step)
 	_set_editor_setting(KEY_ROTATION_STEP, settings.rotation_step)
+	_set_editor_setting(KEY_DRAG_TO_ROTATE_ENABLED, settings.drag_to_rotate_enabled)
+	_set_editor_setting(
+		KEY_DRAG_ROTATION_SENSITIVITY,
+		_normalize_drag_rotation_sensitivity(settings.drag_rotation_sensitivity)
+	)
 	_set_editor_setting(KEY_UI_SCALE, settings.ui_scale)
 	_set_editor_setting(KEY_PALETTE_ITEM_SCALE, settings.palette_item_scale)
 	_set_editor_setting(KEY_AUTO_GRID_ENABLED, settings.auto_grid_enabled)
@@ -132,6 +139,14 @@ func get_settings() -> AssetPlacerSettings:
 		KEY_PLANE_PLACEMENT_STEP, settings.plane_placement_step
 	)
 	settings.rotation_step = _get_editor_setting(KEY_ROTATION_STEP, settings.rotation_step)
+	settings.drag_to_rotate_enabled = _get_editor_setting(
+		KEY_DRAG_TO_ROTATE_ENABLED, settings.drag_to_rotate_enabled
+	)
+	settings.drag_rotation_sensitivity = _normalize_drag_rotation_sensitivity(
+		_get_editor_setting(
+			KEY_DRAG_ROTATION_SENSITIVITY, settings.drag_rotation_sensitivity
+		)
+	)
 	settings.ui_scale = _get_editor_setting(KEY_UI_SCALE, settings.ui_scale)
 	settings.palette_item_scale = _get_editor_setting(
 		KEY_PALETTE_ITEM_SCALE, settings.palette_item_scale
@@ -203,6 +218,16 @@ func _normalize_grid_step(value: Variant) -> Vector2:
 	return Vector2(
 		clampf(value.x, AssetPlacerOptions.MIN_GRID_STEP, AssetPlacerOptions.MAX_GRID_STEP),
 		clampf(value.y, AssetPlacerOptions.MIN_GRID_STEP, AssetPlacerOptions.MAX_GRID_STEP)
+	)
+
+
+func _normalize_drag_rotation_sensitivity(value: Variant) -> float:
+	if value is not float and value is not int:
+		return AssetPlacerSettings.DEFAULT_DRAG_ROTATION_SENSITIVITY
+	return clampf(
+		float(value),
+		AssetPlacerSettings.MIN_DRAG_ROTATION_SENSITIVITY,
+		AssetPlacerSettings.MAX_DRAG_ROTATION_SENSITIVITY
 	)
 
 

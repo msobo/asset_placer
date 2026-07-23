@@ -58,7 +58,7 @@ func _update_button_icon() -> void:
 		return
 	if _asset != null and _asset.has_resource():
 		button.tooltip_text = _asset.name
-		button.icon = AssetThumbnailTexture2D.new(_asset.get_resource())
+		button.icon = AssetThumbnailTexture2D.new(_asset)
 	elif configurable:
 		button.icon = EditorIconTexture2D.new("Add")
 	else:

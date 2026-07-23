@@ -8,6 +8,7 @@ const PLACEHOLDER_TEXTURE_PATH := "res://addons/asset_placer/icon.png"
 static var instance: ThumbnailCacheStore
 
 var _placeholder_texture: Texture2D
+var _texture_cache: Dictionary = {}
 
 
 func _init():
@@ -72,11 +73,22 @@ func load_texture(identifier: String) -> Texture2D:
 		return null
 	var thumbnail_path := thumbnail_path_for_identifier(identifier)
 	if not FileAccess.file_exists(thumbnail_path):
+		_texture_cache.erase(identifier)
 		return null
+
+	var cached_reference := _texture_cache.get(identifier) as WeakRef
+	if is_instance_valid(cached_reference):
+		var cached_texture := cached_reference.get_ref() as Texture2D
+		if is_instance_valid(cached_texture):
+			return cached_texture
+		_texture_cache.erase(identifier)
+
 	var image := Image.load_from_file(thumbnail_path)
 	if image == null or image.is_empty():
 		return null
-	return ImageTexture.create_from_image(image)
+	var texture := ImageTexture.create_from_image(image)
+	_texture_cache[identifier] = weakref(texture)
+	return texture
 
 
 func save_thumbnail(identifier: String, image: Image) -> bool:
@@ -85,7 +97,10 @@ func save_thumbnail(identifier: String, image: Image) -> bool:
 	if not ensure_cache_dir():
 		return false
 	var thumbnail_path := thumbnail_path_for_identifier(identifier)
-	return image.save_png(thumbnail_path) == OK
+	var save_result := image.save_png(thumbnail_path)
+	if save_result == OK:
+		_texture_cache.erase(identifier)
+	return save_result == OK
 
 
 func get_placeholder_texture() -> Texture2D:

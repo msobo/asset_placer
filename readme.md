@@ -309,3 +309,9 @@ The Settings Panel also provides **Drag to Rotate (Alt+LMB)** and **Drag Sensiti
 - Some generated thumbnails may still look imperfect depending on asset complexity, materials, and scene setup
 
 ## Changelog
+
+### Unreleased
+
+- Fixed an editor crash when opening **Manage Collections** with large asset libraries. Asset rows now resolve cached thumbnails from their lightweight `AssetResource` metadata instead of loading every referenced 3D scene or model.
+- Updated Asset Palette thumbnails to use the same resource-safe loading path.
+- Added weak-reference thumbnail texture reuse and cache invalidation after thumbnail regeneration, preventing duplicate 256×256 textures from accumulating in editor memory.

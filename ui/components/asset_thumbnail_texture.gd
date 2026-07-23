@@ -2,17 +2,20 @@
 class_name AssetThumbnailTexture2D
 extends Texture2D
 
-@export var resource: Resource
-
+var _asset: AssetResource
 var _resolved_texture: Texture2D = null
 var _last_time_modified = 0
 var _thumbnail_identifier := ""
+var _source_path := ""
 
 
-func _init(res: Resource = null):
+## Uses the lightweight AssetResource instead of loading its scene resource.
+func _init(asset: Variant = null):
 	var cache_store := ThumbnailCacheStore.instance
-	if res:
-		self.resource = res
+	if asset is AssetResource and is_instance_valid(asset):
+		_asset = asset as AssetResource
+		_source_path = _asset.get_path()
+		_thumbnail_identifier = cache_store.identifier_for_asset(_asset) if cache_store else ""
 		_resolved_texture = cache_store.get_placeholder_texture() if cache_store else null
 		_refresh_texture(true)
 	var coordinator := ThumbnailGenerationCoordinator.instance
@@ -24,19 +27,28 @@ func _refresh_texture(request_regeneration: bool):
 	if not Engine.is_editor_hint():
 		return
 
-	if not is_instance_valid(resource):
-		return
-
-	if resource.resource_path.is_empty():
+	if not is_instance_valid(_asset):
 		return
 
 	var cache_store := ThumbnailCacheStore.instance
 	if cache_store == null:
 		return
-	_thumbnail_identifier = cache_store.identifier_for_resource_path(resource.resource_path)
-	_last_time_modified = FileAccess.get_modified_time(resource.resource_path)
+
+	if not _asset.has_resource():
+		_resolved_texture = cache_store.get_placeholder_texture()
+		emit_changed()
+		return
+
+	_source_path = _asset.get_path()
+	if _source_path.is_empty():
+		_resolved_texture = cache_store.get_placeholder_texture()
+		emit_changed()
+		return
+
+	_thumbnail_identifier = cache_store.identifier_for_asset(_asset)
+	_last_time_modified = FileAccess.get_modified_time(_source_path)
 	var cached_texture := cache_store.load_texture(_thumbnail_identifier)
-	var stale := cache_store.is_missing_or_stale_path(_thumbnail_identifier, resource.resource_path)
+	var stale := cache_store.is_missing_or_stale_path(_thumbnail_identifier, _source_path)
 	if is_instance_valid(cached_texture):
 		_resolved_texture = cached_texture
 	else:
@@ -45,7 +57,7 @@ func _refresh_texture(request_regeneration: bool):
 	if request_regeneration and stale:
 		var coordinator := ThumbnailGenerationCoordinator.instance
 		if is_instance_valid(coordinator) and not coordinator.is_running():
-			coordinator.generate_for_resource_path(resource.resource_path, true)
+			coordinator.generate_for_asset(_asset, true)
 
 	emit_changed()
 
@@ -54,8 +66,8 @@ func _resolve():
 	if not Engine.is_editor_hint():
 		return
 
-	if is_instance_valid(resource) and not resource.resource_path.is_empty():
-		var new_time_modified = FileAccess.get_modified_time(resource.resource_path)
+	if is_instance_valid(_asset) and not _source_path.is_empty():
+		var new_time_modified = FileAccess.get_modified_time(_source_path)
 		if new_time_modified != _last_time_modified:
 			_refresh_texture(true)
 

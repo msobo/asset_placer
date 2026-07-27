@@ -211,12 +211,21 @@ layout_mode = 2
 [node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/Snapping" unique_id=2136709588]
 layout_mode = 2
 
-[node name="GridSnappingCheckbox" type="CheckBox" parent="VBoxContainer/Snapping/VBoxContainer" unique_id=42123293]
+[node name="SnappingToggleContainer" type="HBoxContainer" parent="VBoxContainer/Snapping/VBoxContainer"]
+layout_mode = 2
+
+[node name="GridSnappingCheckbox" type="CheckBox" parent="VBoxContainer/Snapping/VBoxContainer/SnappingToggleContainer" unique_id=42123293]
 unique_name_in_owner = true
 layout_mode = 2
 button_pressed = true
 text = "Grid Snapping"
 icon = SubResource("Texture2D_5lmt4")
+
+[node name="AutoGridEnabledCheckBox" type="CheckBox" parent="VBoxContainer/Snapping/VBoxContainer/SnappingToggleContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Automatically applies the configured Wall, Floor, or Ceiling grid step for the active collection filter."
+text = "Auto Grid"
 
 [node name="GridStepUContainer" type="HBoxContainer" parent="VBoxContainer/Snapping/VBoxContainer" unique_id=251282854]
 layout_mode = 2

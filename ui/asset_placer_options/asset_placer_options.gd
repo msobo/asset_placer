@@ -4,6 +4,7 @@ extends Control
 var presenter: AssetPlacerPresenter
 var _settings_presenter := SettingsPresenter.new()
 @onready var grid_snapping_checkbox = %GridSnappingCheckbox
+@onready var auto_grid_enabled_check_box: CheckBox = %AutoGridEnabledCheckBox
 @onready var grid_snap_u_spin_box: SpinBox = %GridSnapUSpinBox
 @onready var grid_snap_v_spin_box: SpinBox = %GridSnapVSpinBox
 @onready var plane_grid_step_spin_box: SpinBox = %PlaneGridStepSpinBox
@@ -47,6 +48,7 @@ func _ready():
 	)
 
 	grid_snapping_checkbox.toggled.connect(presenter.set_grid_snapping_enabled)
+	auto_grid_enabled_check_box.toggled.connect(_settings_presenter.set_auto_grid_enabled)
 	grid_snap_u_spin_box.value_changed.connect(presenter.set_grid_snap_u)
 	grid_snap_v_spin_box.value_changed.connect(presenter.set_grid_snap_v)
 	plane_grid_step_spin_box.value_changed.connect(_settings_presenter.set_plane_placement_step)
@@ -86,6 +88,7 @@ func _ready():
 
 func _show_settings(settings: AssetPlacerSettings):
 	plane_grid_step_spin_box.set_value_no_signal(settings.plane_placement_step)
+	auto_grid_enabled_check_box.set_pressed_no_signal(settings.auto_grid_enabled)
 	var brush_binding: APInputOption = settings.bindings[AssetPlacerSettings.Bindings.ToggleBrush]
 	grid_brush_hint_label.text = "Grid Brush shortcut: %s" % brush_binding.get_display_name()
 

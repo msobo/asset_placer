@@ -118,9 +118,9 @@ func set_placement_tool(tool: AssetPlacerPresenter.PlacementTool):
 func _update_brush_hint():
 	if _placement_tool == AssetPlacerPresenter.PlacementTool.Brush:
 		brush_mode_label.text = (
-			"%s: Brush · LMB Paint · Shift Line · Ctrl Fill" % _brush_shortcut_name
+			"%s: Brush · Spacing: Grid Step U/V · Auto Grid may override" % _brush_shortcut_name
 			if _brush_shortcut_assigned
-			else "Brush active · LMB Paint · Shift Line · Ctrl Fill"
+			else "Brush active · Spacing: Grid Step U/V · Auto Grid may override"
 		)
 	else:
 		brush_mode_label.text = "Grid Brush shortcut: %s" % _brush_shortcut_name

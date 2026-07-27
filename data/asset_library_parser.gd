@@ -5,11 +5,10 @@ const DEFAULT_SAVE_PATH := "user://asset_library.json"
 
 
 static func load_library(load_path = DEFAULT_SAVE_PATH) -> AssetLibrary:
-	var file = FileAccess.open(load_path, FileAccess.READ)
-	if file == null || file.get_as_text().is_empty():
+	var data := _load_library_data(load_path)
+	if data.is_empty():
 		return AssetLibrary.new([], [], [])
 
-	var data = JSON.parse_string(file.get_as_text())
 	var folders_dicts: Array = data["folders"]
 	var assets_dicts: Array = data["assets"]
 	var collections_dict: Array = data["collections"]
@@ -62,11 +61,10 @@ static func load_library(load_path = DEFAULT_SAVE_PATH) -> AssetLibrary:
 		var id: int = collection_dict["id"]
 		collections.append(AssetCollection.new(col_name, color, id))
 
-	file.close()
 	return AssetLibrary.new(assets, folders, collections)
 
 
-static func save_library(library: AssetLibrary, save_path = DEFAULT_SAVE_PATH):
+static func save_library(library: AssetLibrary, save_path = DEFAULT_SAVE_PATH) -> Error:
 	assert(is_instance_valid(library), "AssetLibraryParser: Cannot save null library.")
 
 	var assets_dict: Array[Dictionary] = []
@@ -116,6 +114,66 @@ static func save_library(library: AssetLibrary, save_path = DEFAULT_SAVE_PATH):
 	}
 
 	var json = JSON.stringify(lib_dict)
-	var file = FileAccess.open(save_path, FileAccess.WRITE)
+	var temp_path: String = save_path + ".tmp"
+	var backup_path: String = save_path + ".bak"
+	var file := FileAccess.open(temp_path, FileAccess.WRITE)
+	if file == null:
+		var open_error := FileAccess.get_open_error()
+		push_error("Asset Placer: Cannot open temporary library file: %s" % error_string(open_error))
+		return open_error
 	file.store_string(json)
+	var write_error := file.get_error()
 	file.close()
+	if write_error != OK:
+		push_error("Asset Placer: Cannot write temporary library file: %s" % error_string(write_error))
+		return write_error
+
+	var parsed_temp = JSON.parse_string(FileAccess.get_file_as_string(temp_path))
+	if parsed_temp is not Dictionary:
+		push_error("Asset Placer: Refusing to replace library with invalid JSON.")
+		return ERR_PARSE_ERROR
+
+	var absolute_path := ProjectSettings.globalize_path(save_path)
+	var absolute_temp_path := ProjectSettings.globalize_path(temp_path)
+	var absolute_backup_path := ProjectSettings.globalize_path(backup_path)
+	if FileAccess.file_exists(save_path):
+		var backup_error := DirAccess.copy_absolute(absolute_path, absolute_backup_path)
+		if backup_error != OK:
+			push_warning(
+				"Asset Placer: Could not update library backup: %s" % error_string(backup_error)
+			)
+
+	var rename_error := DirAccess.rename_absolute(absolute_temp_path, absolute_path)
+	if rename_error != OK:
+		push_error("Asset Placer: Cannot replace asset library: %s" % error_string(rename_error))
+		return rename_error
+	return OK
+
+
+static func _load_library_data(load_path: String) -> Dictionary:
+	var data := _read_library_data(load_path)
+	if not data.is_empty():
+		return data
+
+	var backup_path := load_path + ".bak"
+	var backup_data := _read_library_data(backup_path)
+	if not backup_data.is_empty():
+		push_warning("Asset Placer: Loading backup because the main asset library is invalid.")
+		return backup_data
+	return {}
+
+
+static func _read_library_data(path: String) -> Dictionary:
+	if not FileAccess.file_exists(path):
+		return {}
+	var text := FileAccess.get_file_as_string(path)
+	if text.is_empty():
+		return {}
+	var parsed = JSON.parse_string(text)
+	if parsed is not Dictionary:
+		push_error("Asset Placer: Invalid asset library JSON at %s" % path)
+		return {}
+	if not parsed.has_all(["folders", "assets", "collections"]):
+		push_error("Asset Placer: Incomplete asset library JSON at %s" % path)
+		return {}
+	return parsed

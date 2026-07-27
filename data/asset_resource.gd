@@ -43,12 +43,21 @@ func get_primary_collection() -> int:
 
 ## Get the path to the resource if it exists
 func get_path() -> String:
-	if not has_resource():
-		return ""
 	# If id is already a path (not a UID), return it directly
 	if not id.begins_with("uid://"):
-		return id
-	return ResourceUID.get_id_path(ResourceUID.text_to_id(id))
+		return id if ResourceLoader.exists(id) else ""
+
+	var numeric_id := ResourceUID.text_to_id(id)
+	if not ResourceUID.has_id(numeric_id):
+		return ""
+	return ResourceUID.get_id_path(numeric_id)
+
+
+## Returns the last known source path even while its UID is temporarily unavailable.
+func get_fallback_path() -> String:
+	if not folder_path.is_empty() and not name.is_empty():
+		return folder_path.path_join(name)
+	return id if id.begins_with("res://") else ""
 
 
 func get_resource() -> Resource:
@@ -59,10 +68,16 @@ func get_resource() -> Resource:
 	return _resource
 
 
-## Whether the AssetResource id points to a valid resource.
-## Always false after failing to load.
+## Whether the AssetResource id currently points to an existing resource.
+## A failed load is tracked separately so synchronization never deletes metadata
+## merely because importing or loading the resource failed temporarily.
 func has_resource() -> bool:
-	return ResourceUID.has_id(ResourceUID.text_to_id(id)) and not _failed_load
+	if id.begins_with("res://"):
+		return ResourceLoader.exists(id)
+	if not id.begins_with("uid://"):
+		return false
+	var numeric_id := ResourceUID.text_to_id(id)
+	return ResourceUID.has_id(numeric_id) and ResourceLoader.exists(id)
 
 
 func is_resource_loaded() -> bool:

@@ -4,6 +4,10 @@ extends RefCounted
 signal sync_state_change(running: bool)
 signal sync_complete(added: int, removed: int, scanned: int)
 
+## A resource may briefly disappear from ResourceUID while Godot reimports it.
+## Requiring multiple failed scans prevents a transient import state from erasing metadata.
+const MISSING_SCANS_BEFORE_REMOVAL := 2
+
 static var instance: Synchronize
 
 var sync_running = false:
@@ -14,6 +18,7 @@ var sync_running = false:
 var _added = 0
 var _removed = 0
 var _scanned = 0
+var _missing_scan_counts: Dictionary[String, int] = {}
 
 
 func _init():
@@ -100,11 +105,20 @@ func _update_assets():
 	var lib := AssetLibraryManager.get_asset_library()
 	var assets: Array[AssetResource] = lib.get_assets().duplicate()
 	for asset in assets:
+		var previous_id := asset.id
+		_refresh_asset_identity(asset, lib)
 		if not _is_asset_valid(asset):
-			_removed += 1
-			lib.remove_asset(asset)
+			var missing_key := previous_id
+			var missing_count: int = int(_missing_scan_counts.get(missing_key, 0)) + 1
+			_missing_scan_counts[missing_key] = missing_count
+			if missing_count >= MISSING_SCANS_BEFORE_REMOVAL:
+				_removed += 1
+				lib.remove_asset(asset)
+				_missing_scan_counts.erase(missing_key)
 			continue
 
+		_missing_scan_counts.erase(previous_id)
+		_missing_scan_counts.erase(asset.id)
 		for folder in lib.get_folders():
 			if folder.has_asset(asset):
 				for rule in folder.get_rules():
@@ -112,7 +126,32 @@ func _update_assets():
 		lib.update_asset(asset)
 
 
-func _is_asset_valid(asset: AssetResource):
+func _refresh_asset_identity(asset: AssetResource, lib: AssetLibrary):
+	var source_path := asset.get_path()
+	if source_path.is_empty():
+		var fallback_path := asset.get_fallback_path()
+		if ResourceLoader.exists(fallback_path):
+			source_path = fallback_path
+	if source_path.is_empty():
+		return
+
+	var current_id: String = ResourceIdCompat.path_to_uid(source_path)
+	if current_id.is_empty():
+		current_id = source_path
+	if current_id != asset.id:
+		var existing_asset := lib.get_asset(current_id)
+		if existing_asset:
+			existing_asset.add_tags(asset.tags)
+			if existing_asset.primary_collection < 0:
+				existing_asset.primary_collection = asset.primary_collection
+			lib.update_asset(existing_asset)
+		else:
+			asset.id = current_id
+	asset.name = source_path.get_file()
+	asset.folder_path = source_path.get_base_dir()
+
+
+func _is_asset_valid(asset: AssetResource) -> bool:
 	var lib := AssetLibraryManager.get_asset_library()
 	return asset.has_resource() and lib.asset_has_folder(asset)
 

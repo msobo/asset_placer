@@ -6,6 +6,7 @@ signal selection_changed(indices: PackedInt32Array, batch_mode: bool)
 signal collections_changed(collections: Array[CollectionState], batch_mode: bool)
 
 enum SelectMode { SINGLE, RANGE, MULTI }
+enum SortMode { NAME, UNAVAILABLE_FIRST }
 
 
 class CollectionState:
@@ -35,22 +36,15 @@ var _assets: Array[AssetResource] = []
 var _selected_indices: PackedInt32Array = []
 var _batch_mode: bool = false
 var _last_toggled_index: int = -1
+var _query: String = ""
+var _sort_mode: SortMode = SortMode.NAME
 
 
 func ready(initial_asset_id: String = ""):
-	_assets = _asset_library.get_assets()
 	if not initial_asset_id.is_empty():
-		for i in _assets.size():
-			if _assets[i].id == initial_asset_id:
-				_selected_indices = PackedInt32Array([i])
-				_last_toggled_index = i
-				break
-	elif not _assets.is_empty():
-		_selected_indices = PackedInt32Array([0])
-		_last_toggled_index = 0
-	_emit_assets()
-	_emit_selection()
-	_emit_collections()
+		_refresh_assets(PackedStringArray([initial_asset_id]), 0)
+	else:
+		_refresh_assets(PackedStringArray(), 0)
 
 
 func toggle_asset(index: int, mode: SelectMode):
@@ -99,21 +93,43 @@ func select_all():
 
 
 func filter_assets(query: String):
-	var all_assets := _asset_library.get_assets()
+	var selected_ids := _get_selected_asset_ids()
+	_query = query
+	_refresh_assets(selected_ids, 0)
 
-	if query.is_empty():
-		_assets = all_assets
-	else:
-		_assets = all_assets.filter(func(asset: AssetResource): return asset.name.containsn(query))
 
-	_selected_indices.clear()
-	if not _assets.is_empty():
-		_selected_indices = PackedInt32Array([0])
-		_last_toggled_index = 0
+func set_sort_mode(mode: SortMode):
+	if mode == _sort_mode:
+		return
 
-	_emit_assets()
-	_emit_selection()
-	_emit_collections()
+	var selected_ids := _get_selected_asset_ids()
+	_sort_mode = mode
+	_refresh_assets(selected_ids, -1)
+
+
+func get_selected_assets() -> Array[AssetResource]:
+	var selected: Array[AssetResource] = []
+	for idx in _selected_indices:
+		if idx >= 0 and idx < _assets.size():
+			selected.push_back(_assets[idx])
+	return selected
+
+
+func remove_selected_assets():
+	var selected_assets := get_selected_assets()
+	if selected_assets.is_empty():
+		return
+
+	var next_index := _selected_indices[0]
+	for idx in _selected_indices:
+		next_index = mini(next_index, idx)
+
+	for asset in selected_assets:
+		if _asset_library.has_asset_id(asset.id):
+			_asset_library.remove_asset(asset)
+
+	_batch_mode = false
+	_refresh_assets(PackedStringArray(), next_index)
 
 
 func set_primary_collection(collection: AssetCollection):
@@ -170,6 +186,53 @@ func _index_in_selection(index: int) -> int:
 		if _selected_indices[i] == index:
 			return i
 	return -1
+
+
+func _get_selected_asset_ids() -> PackedStringArray:
+	var ids := PackedStringArray()
+	for asset in get_selected_assets():
+		ids.push_back(asset.id)
+	return ids
+
+
+func _refresh_assets(selected_ids: PackedStringArray, fallback_index: int):
+	var all_assets: Array[AssetResource] = _asset_library.get_assets().duplicate()
+	if _query.is_empty():
+		_assets = all_assets
+	else:
+		_assets = all_assets.filter(
+			func(asset: AssetResource): return asset.name.containsn(_query)
+		)
+
+	_assets.sort_custom(_sort_assets)
+
+	_selected_indices.clear()
+	for i in _assets.size():
+		if selected_ids.has(_assets[i].id):
+			_selected_indices.push_back(i)
+
+	if _selected_indices.is_empty() and not _assets.is_empty() and fallback_index >= 0:
+		var selected_index := mini(fallback_index, _assets.size() - 1)
+		_selected_indices.push_back(selected_index)
+		_batch_mode = false
+
+	_last_toggled_index = _selected_indices[-1] if not _selected_indices.is_empty() else -1
+	_emit_assets()
+	_emit_selection()
+	_emit_collections()
+
+
+func _sort_assets(left: AssetResource, right: AssetResource) -> bool:
+	if _sort_mode == SortMode.UNAVAILABLE_FIRST:
+		var left_unavailable := not left.has_resource()
+		var right_unavailable := not right.has_resource()
+		if left_unavailable != right_unavailable:
+			return left_unavailable
+
+	var name_comparison := left.name.naturalnocasecmp_to(right.name)
+	if name_comparison != 0:
+		return name_comparison < 0
+	return left.id < right.id
 
 
 func _emit_assets():

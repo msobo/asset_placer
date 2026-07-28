@@ -18,6 +18,9 @@ var _asset_item_res = preload(
 @onready var _active_collections_container: Container = %ActiveCollectionsContainer
 @onready var _inactive_collections_container: Container = %InactiveCollectionsContainer
 @onready var _filter_line_edit: LineEdit = %FilterAssetsLineEdit
+@onready var _sort_button: OptionButton = %SortAssetsButton
+@onready var _remove_selected_button: Button = %RemoveSelectedButton
+@onready var _remove_confirmation: ConfirmationDialog = %RemoveAssetsConfirmationDialog
 @onready var _empty_assets_view = %EmptyAssetsEmptyView
 @onready var _empty_active_view = %NoActiveCollectionsEmptyView
 @onready var _empty_available_view = %NoInActiveCollectionsEmptyView
@@ -30,6 +33,14 @@ func _ready():
 	_presenter.selection_changed.connect(_on_selection_changed)
 	_presenter.collections_changed.connect(_on_collections_changed)
 	_filter_line_edit.text_changed.connect(_presenter.filter_assets)
+	_sort_button.add_item("Name", ManageCollectionsPresenter.SortMode.NAME)
+	_sort_button.add_item(
+		"Unavailable first", ManageCollectionsPresenter.SortMode.UNAVAILABLE_FIRST
+	)
+	_sort_button.select(0)
+	_sort_button.item_selected.connect(_on_sort_selected)
+	_remove_selected_button.pressed.connect(_show_remove_confirmation)
+	_remove_confirmation.confirmed.connect(_presenter.remove_selected_assets)
 	_presenter.ready(initial_asset_id)
 	size_changed.connect(_on_size_changed)
 	call_deferred("_restore_size")
@@ -75,6 +86,7 @@ func _on_assets_changed(assets: Array[AssetResource]):
 
 
 func _on_selection_changed(indices: PackedInt32Array, _batch_mode: bool):
+	_remove_selected_button.disabled = indices.is_empty()
 	var buttons := _assets_container.get_children()
 	for i in buttons.size():
 		var button := buttons[i] as Button
@@ -85,6 +97,29 @@ func _on_selection_changed(indices: PackedInt32Array, _batch_mode: bool):
 				await get_tree().process_frame
 				if is_instance_valid(button) and button.is_inside_tree():
 					_assets_scroll.ensure_control_visible(button)
+
+
+func _on_sort_selected(index: int):
+	var sort_mode := _sort_button.get_item_id(index) as ManageCollectionsPresenter.SortMode
+	_presenter.set_sort_mode(sort_mode)
+
+
+func _show_remove_confirmation():
+	var selected_assets := _presenter.get_selected_assets()
+	if selected_assets.is_empty():
+		return
+
+	if selected_assets.size() == 1:
+		_remove_confirmation.dialog_text = (
+			'Remove "%s" permanently from the Asset Library?\n\n'
+			+ "The project file will not be deleted."
+		) % selected_assets[0].name
+	else:
+		_remove_confirmation.dialog_text = (
+			"Remove %d selected assets permanently from the Asset Library?\n\n"
+			+ "Project files will not be deleted."
+		) % selected_assets.size()
+	_remove_confirmation.popup_centered()
 
 
 func _on_collections_changed(

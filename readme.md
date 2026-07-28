@@ -246,6 +246,7 @@ The Collection Management dialog provides a streamlined way to assign and remove
 - **Batch Selection** - Select multiple assets using Shift+Click (range) or Ctrl/Cmd+Click (multi-select)
 - **Quick Assignment** - Add or remove collections from all selected assets with one click
 - **Visual Feedback** - See which collections are fully assigned, partially assigned, or available
+- **Unavailable Asset Cleanup** - Sort unavailable assets to the top and permanently remove selected entries from the Asset Library without deleting project files
 
 To open the Collection Management dialog:
 

@@ -1,91 +1,18 @@
 
 # Godot Asset Placer V2
 
+![v2](icon.png)
+
 This is Godot Editor plugin that allows for quick asset placement and management when working with large 3D Scenes.
+Heavily modified for modular-asset collections placement and management.
+Based on: https://github.com/levinzonr/godot-asset-placer
 
-> Please report any issues you encounter. Feature suggestions are welcome as well.
-
-## Features
-
-- One-Click Asset Placement with Snapping to Ground, Collision shapes and Terrain3D Surfaces
-- [Quick Preview Node Transformations Before Placement]
-- **In Place Transform Mode** - Apply transformations to existing nodes in the scene using Asset Placer workflow
-- **Settings Panel** - Comprehensive customization options including key bindings, preview materials, and transform steps
-- **Random Asset Placement** - Automatically select random assets from filtered list after each placement
-- **Advanced Placement Options** - Normal alignment and scene bottom alignment controls
-- Organize Assets into collections for quick access and filtering
-- **Auto-Grouping** - Automatically group placed assets under nodes named after their primary collection
-- **Parent from selection** - Optionally derive the Assets Parent from the selected `Node3D` so new assets are placed as siblings (see Options)
-- **Folder Rules** - Configure rules to automatically assign collections when syncing asset folders
-- **Asset palettes** - Shortcuts to your most used assets right under your fingertips (same asset can live in multiple palettes; active palette shown in the viewport overlay)
-- **Toggle Asset Placer** - Enable or disable placement mode from the 3D viewport with a configurable shortcut (default: `Shift+A`)
-- **Asset library sorting** - Sort assets by name, date added, or last placed, with ascending or descending order
-- **Custom thumbnail rendering** - Generated previews with cache storage and a regeneration option in Settings
-- Filter Assets by their name and collection
-- Grid snapping when placing assets
-- **AutoGrid from Collection Filters** - Automatically apply configurable U/V grid steps for filtered wall, floor, and ceiling collections
-- **Grid Brush** - Paint assets freehand, as straight grid lines, or across filled rectangular areas in Plane Placement Mode
-- **One Asset per Grid Cell** - Brush strokes and regular plane placements replace existing Asset Placer objects in occupied cells without affecting unrelated nodes or assets on other height levels
-- **Configurable Grid Step** - Set a square grid size from 0.01 to 1000 world units; the visible plane grid updates automatically
-- Randomize asset Rotation and Scale on placement
-- Undo-Redo Integration
 
 ## Installation
 
 1. Copy the `addons/asset_placerV2` folder into your Godot project under the `addons` directory.
 2. Enable the plugin in the Godot Editor by going to `Project` -> `Project Settings` -> `Plugins` and enabling the `Asset PlacerV2` plugin.
 
-## Usage
-
-### Adding Assets
-
-Right now the plugin relies on user selecting the folders where your assets are located so that not every scene is added automatically.
-You can folders to sync by either Drag And Droping the folder or  using "Add folder button" within Folders Tab
-![addon_folders.png](docs/addon_folders.png)
-
-On the **Assets** tab you can sort the library by name, date added, or last placed, and flip between ascending and descending order using the sort controls.
-
-### Folder Rules
-
-Folder Rules allow you to automate actions when syncing asset folders. Rules are configured per-folder and can be combined to create powerful workflows.
-
-![](docs/assets/folder_rules_preview.png)
-
-**Available Rules:**
-
-- **Add to Collection** - Automatically assign synced assets to a specific collection
-- **Filter by Name** - Only include assets whose filename contains specified text
-
-To configure rules, click the "Rules" button on any folder in the Folders tab to expand the rules panel.
-
-### Asset Palettes
-
-Asset Palettes give you quick-access rows of your most-used assets. Configure them in the dock, then switch and place from the 3D viewport without returning to the asset library.
-
-#### Configuration
-
-Open the **Palette** tab in the Asset Placer dock to define palettes and assign assets to numbered slots.
-
-![](docs/assets/palette_panel.png)
-
-- Each palette has **10 numbered slots** (keys **1**–**9**, then **0**)
-- Click a slot to pick an asset from the library; **right-click** a filled slot to clear it
-- Use **New Palette** to add another row; the same asset may appear in more than one palette
-- Delete a palette with the trash control; deleting the last palette **clears its slots** instead of removing the row
-- Adjust slot size with **Asset Palette Item Scale** in [Settings](#settings-panel) (default: 1.0)
-
-Palette data is saved with your Asset Placer configuration.
-
-#### Viewport overlay
-
-While placement mode is active, the viewport overlay shows the active palette and its slot shortcuts so you can swap assets without opening the dock.
-
-![](docs/assets/overlay.png)
-
-- The header shows which palette is active (for example, **Palette #1**)
-- Press **1** through **9**, then **0**, to select the asset in that slot
-- When you have more than one palette, cycle with **Tab** / **Shift+Tab** (configurable in Settings); cycling skips palettes with no assets assigned
-- Use **Toggle Asset Placer** (default: **Shift+A**) to turn placement mode on or off from the viewport
 
 ### Placing Assets
 
@@ -141,30 +68,10 @@ Matching is case-insensitive. Names such as stone_walls and wallsXYZ do not acti
 
 When you select no collection, multiple collections, or a collection without one of these prefixes, the previous manual Grid Snapping state is restored. Manually changing Grid Snapping or its U/V value temporarily disables AutoGrid for the current filter; switching the filter enables automatic matching again.
 
-#### Terrain 3d Placement
-
-This mode allows you to place assets directly onto a Terrain3D surface. When selected you will be prompted to select your Terrain3D node. After that the plugin will user Terrain3D surfaces to resolve placement location.
-
-#### Placement Steps
-
-To place an asset, follow these steps:
-
-1. Navigate to the 3D Scene of your choice
-2. Optional: Change Placement Mode. By default, the Plugin uses Surface Collision mode, you can change it within Options Sub View
-3. Open Asset Placer Dock window and select the asset you want to place from the Assets tab
-4. Optional: Set **Assets Parent** under the selected root, or enable **Use selection for parent** so the parent is taken from the current `Node3D` selection (sibling placement). Picking **Assets Parent** disables selection-based mode.
-5. Optional: Configure Placement Options:
-   - **Align Normals** - Enable to align assets with surface normals for natural placement on sloped surfaces
-   - **Use Assets Origin** - Enable to place using asset's local origin point, or disable to use the asset's actual bottom
-6. At this point you will see a preview of the asset in the 3D viewport
-7. Press `Left Mouse Button` to place the asset at the location of the mouse cursor
-8. If you want to modify the asset after placement, you can press `Shift` + `Left Mouse Button` to Place And Focus on the Placed Asset. This allows you to move, rotate, or scale the asset using the standard Godot Editor tools.
 
 #### Random Asset Placement
 
 You can enable random asset placement in the Asset Placement Options. When enabled, after each placement, a new asset will be randomly selected from the currently filtered list of assets in the Assets Panel. This is useful for quickly populating scenes with varied assets.
-
-> ⚠️ This feature is experimental and may require further improvements in the future.
 
 #### Auto-Grouping by Collection
 
@@ -187,7 +94,6 @@ Assets without a primary collection will be placed directly under the parent nod
 #### Transforming Assets Before Placement
 
 You can modify the preview of the asset before placement. This includes options for rotation and scaling, allowing users to visualize how the asset will appear in the scene prior to placement, do quick and precise adjustment modifications.
-![addon_viewport_controls.png](docs/addon_viewport_controls.png)
 Specific transformation mode can be enabled by pressing button while in placement mode (Asset is selected). By default, transformations are applied by Mouse Wheel:
 
 - `Mouse Wheel Up`: "Positive" transformation
@@ -204,33 +110,6 @@ This also requires an ability to select active Axis for the transformation. This
 - `X` to select X axis
 - `Y` to select Y axis
 - `Z` to select Z axis
-
-##### Drag-to-Rotate Mode
-
-The default rotation input remains the mouse wheel. To use a Blender-style drag workflow, enable **Drag to Rotate (Alt+LMB)** in the Asset Placer Settings. The option is disabled by default.
-
-When Rotate mode is active:
-
-- Hold `Alt` and drag with the left mouse button to rotate horizontally around the selected axis.
-- The signed angle changed during the current drag is shown next to the asset (for example, `+37.5°`).
-- Hold `Ctrl` while dragging to snap to the configured **Rotation Step**.
-- Release the left mouse button to keep the rotation, or press `Esc` to restore the transform from before the drag.
-
-**Drag Sensitivity (Degrees/Pixel)** controls how much rotation each horizontal mouse pixel applies. Drag-to-Rotate is available for both asset previews and In Place Transform Mode. When enabled, mouse-wheel rotation is replaced only for rotation; scale and translation keep their existing wheel bindings.
-
-#### In Place Transform Mode
-
- **In Place Transform Mode** allows you to apply transformations to existing nodes in your scene using the same Asset Placer transformation workflow. This is useful when you want to adjust nodes that are already placed in your scene.
-
-To use In Place Transform Mode:
-
-1. Select a Node3D in the scene tree
-2. Press `Shift+E` (default shortcut, configurable in Settings) to enter In Place Transform Mode
-3. Use the same transformation shortcuts (`E` for rotate, `R` for scale, `W` for translate) to modify the selected node
-4. Use `X`, `Y`, `Z` keys to select the transformation axis
-5. Apply transformations with Mouse Wheel Up/Down, or use `Alt+LMB` when Drag to Rotate is enabled
-
-The viewport overlay will display the current transformation mode and active axis, just like in preview placement mode.
 
 ### Organizing Assets
 
@@ -252,17 +131,6 @@ To open the Collection Management dialog:
 
 - Click "Manage Collections" button in the Collections tab
 - Right-click an asset and select "Manage Collections"
-
-#### Primary Collections
-
-Each asset can have one **primary collection** that determines how it's grouped when using [Auto-Grouping](#auto-grouping-by-collection).
-
-**Setting a Primary Collection:**
-
-- In the Collection Management dialog, assigned collections show a star icon
-- Click the star to set that collection as primary / Click Again to reset it
-
-When multiple assets are selected, the star button is always visible for easy batch assignment of primary collections.
 
 ### Settings Panel
 
@@ -306,13 +174,6 @@ The Settings Panel also provides **Drag to Rotate (Alt+LMB)** and **Drag Sensiti
 
 ## Known Issues
 
-- So far the plugin only supports placeable scenes and models with these extensions: `tscn`, `scn`, `glb`, `gltf`, `obj`, `fbx`, and `blend`.
 - Some generated thumbnails may still look imperfect depending on asset complexity, materials, and scene setup
 
 ## Changelog
-
-### Unreleased
-
-- Fixed an editor crash when opening **Manage Collections** with large asset libraries. Asset rows now resolve cached thumbnails from their lightweight `AssetResource` metadata instead of loading every referenced 3D scene or model.
-- Updated Asset Palette thumbnails to use the same resource-safe loading path.
-- Added weak-reference thumbnail texture reuse and cache invalidation after thumbnail regeneration, preventing duplicate 256×256 textures from accumulating in editor memory.
